@@ -95,6 +95,18 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .tab[aria-selected="true"]{background:var(--card);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow)}
 .tab:focus-visible{outline:2px solid var(--d13);outline-offset:2px}
 
+/* 탭 옆 갱신 버튼 — 탭과 달리 칠해 두어 「누르면 무언가 도는 버튼」임을 알린다 */
+.sync{
+  margin-left:8px; border:1px solid transparent; background:var(--forest); color:#fff;
+  font:inherit; font-size:12px; padding:5px 11px; border-radius:999px; cursor:pointer;
+  white-space:nowrap; box-shadow:var(--shadow);
+}
+.sync:hover{filter:brightness(1.08)}
+.sync:focus-visible{outline:2px solid var(--d13);outline-offset:2px}
+.sync[disabled]{opacity:.6;cursor:progress}
+.sync.done{background:var(--sapporo-blue)}
+.sync.fail{background:#B4695E}
+
 /* ══════════ 화면용 ══════════ */
 .screen{max-width:520px;margin:0 auto;padding:0 0 96px}
 .summary{padding:20px 18px 14px;display:flex;align-items:flex-end;gap:10px}

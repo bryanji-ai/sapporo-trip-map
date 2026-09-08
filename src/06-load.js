@@ -172,6 +172,53 @@ function saveHero(p){
   catch(_){ /* 실패해도 화면 동작에는 지장 없다 */ }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   갱신 버튼 — 웹앱에 오늘치 재수집을 시키고 다시 읽어온다
+   ══════════════════════════════════════════════════════════════ */
+
+/* 드라이브에서 다시 읽어 화면 전체를 갱신한다.
+   건진 장소가 없으면 boot() 과 같이 샘플 일정으로 되돌린다. */
+async function syncFromDrive(){
+  LOAD.error = null; LOAD.payload = null;
+  const rows = await loadPlaces();
+  const stat = adoptPlaces(rows);
+  isLive = !!stat.kept;
+  if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
+  refreshAll();
+  return stat;
+}
+
+const syncBtn = document.getElementById('syncBtn');
+let syncing = false;
+
+async function triggerUpdate(){
+  if (syncing) return;
+  syncing = true;
+  syncBtn.disabled = true;
+  syncBtn.classList.remove('done', 'fail');
+  syncBtn.textContent = '갱신 중…';
+  try {
+    // no-cors 라 응답을 읽을 수 없다 — 수집이 돌 시간을 준 뒤 다시 읽는다
+    await fetch(WEB_APP + '?action=updateToday', {mode:'no-cors'}).catch(()=>{});
+    await new Promise(r => setTimeout(r, 3000));
+    const stat = await syncFromDrive();
+    syncBtn.classList.add('done');
+    syncBtn.textContent = stat.kept ? `✓ ${stat.kept}곳` : '✓ 완료';
+  } catch(e){
+    syncBtn.classList.add('fail');
+    syncBtn.textContent = '⚠ 실패';
+    console.warn('갱신 실패:', e && e.message ? e.message : e);
+  } finally {
+    setTimeout(() => {
+      syncBtn.classList.remove('done', 'fail');
+      syncBtn.textContent = '🔄 갱신';
+      syncBtn.disabled = false;
+      syncing = false;
+    }, 1800);
+  }
+}
+syncBtn.onclick = triggerUpdate;
+
 /* ══ 시작 ══ */
 async function boot(){
   // 지형은 먼저 깔아둔다 — 스피너가 빈 상자 위에 뜨지 않게

@@ -31,6 +31,18 @@ function doGet(e) {
   try {
     if (action === 'getPlaces') return _json(apiPlaces());
 
+    // 지도 우상단 「갱신」 버튼 — 드라이브를 다시 훑어 오늘치 사진을 반영한다.
+    // 수집 함수 이름이 스크립트마다 달라서 있는 것을 골라 부른다.
+    // (이 분기가 없으면 ?action=updateToday 가 관리 화면 HTML 로 흘러가 아무것도 돌지 않는다)
+    if (action === 'updateToday') {
+      var ran = '';
+      if (typeof updateToday === 'function')      { updateToday();  ran = 'updateToday'; }
+      else if (typeof scanToday === 'function')   { scanToday();    ran = 'scanToday'; }
+      else if (typeof scanPhotos === 'function')  { scanPhotos();   ran = 'scanPhotos'; }
+      else if (typeof rebuildAll === 'function')  { rebuildAll();   ran = 'rebuildAll'; }
+      return _json({ ok: !!ran, ran: ran || null });
+    }
+
     if (action === 'setHero') {
       setHero(e.parameter.place, e.parameter.photo);
       return _json({ ok: true });
