@@ -190,26 +190,26 @@ async function boot(){
   if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
   refreshAll();
 
+  // 지도 위에는 안내를 띄우지 않는다 — 상태 표시는 drawScreen() 이 지역별로만 처리하고,
+  // 샘플/연결 진단은 콘솔로 남긴다 (지도가 가려지지 않게).
   if (sample){
     const why =
       LOAD.error === 'NOT_JSON'
-        ? '웹앱이 JSON 대신 관리 화면(HTML)을 돌려줍니다. '
-          + 'tools/apps-script/Code.gs 의 doGet 을 붙여 다시 배포하면 핀이 자동으로 올라옵니다.'
+        ? '웹앱이 JSON 대신 관리 화면(HTML)을 돌려줍니다. tools/apps-script/Code.gs 의 doGet 을 붙여 다시 배포하세요.'
       : LOAD.error === 'NETWORK'
-        ? '웹앱에 연결하지 못했어요. 배포 설정의 「액세스 권한이 있는 사용자」가 <b>모든 사용자</b>인지 확인해 주세요.'
+        ? '웹앱에 연결하지 못했습니다. 배포 설정의 「액세스 권한이 있는 사용자」를 확인하세요.'
       : (p && p.ready === false)
-        ? '시트 준비가 아직 안 됐어요. 스프레드시트에서 <b>mapSetup()</b> 을 한 번 실행해 주세요.'
+        ? '시트 준비 전입니다. 스프레드시트에서 mapSetup() 을 한 번 실행하세요.'
       : stat.offMap
-        ? `사진 ${stat.offMap}곳이 삿포로 · 오타루 · 비에이 세 지도 범위 밖에서 찍혔습니다 (${stat.offList.join(', ')}).`
+        ? `사진 ${stat.offMap}곳이 세 지도 범위 밖에서 찍혔습니다 (${stat.offList.join(', ')}).`
       : stat.noGeo
         ? `위치 정보가 없는 사진 ${stat.noGeo}장은 지도에 올리지 못했습니다.`
-      : '드라이브 「삿포로여행_사진」 폴더에 사진을 올리면 이 핀들이 실제 기록으로 바뀝니다.';
-    showState('warn', '지금은 샘플 일정을 보여주고 있어요.', why);
+      : '드라이브 「삿포로여행_사진」 폴더에 사진이 아직 없습니다.';
+    console.info('샘플 일정을 표시 중입니다 —', why);
   } else {
-    showState(null);
     if (stat.offMap)
       console.warn(`지도 밖 장소 ${stat.offMap}곳을 건너뛰었습니다:`, stat.offList.join(', '));
-    // 첫 핀을 열어 어떻게 쓰는지 바로 보이게 — 샘플일 때는 설명이 가려지지 않게 놔둔다
+    // 첫 핀을 열어 어떻게 쓰는지 바로 보이게
     const first = PLACES.findIndex(x => x.g === current);
     openPin(first < 0 ? 0 : first);
   }

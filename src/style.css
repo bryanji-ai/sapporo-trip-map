@@ -149,7 +149,6 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 }
 .mapstate .st-t{margin:0;font-family:"Jua",sans-serif;font-size:15px;color:var(--map-ink);line-height:1.5}
 .mapstate .st-n{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.65;max-width:30em}
-.mapstate.warn .st-t{color:#9C5B22}
 .mapstate .spin{
   width:26px;height:26px;border-radius:50%;
   border:2.5px solid var(--line);border-top-color:var(--sapporo-blue);
