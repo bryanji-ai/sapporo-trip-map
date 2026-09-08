@@ -5,6 +5,8 @@ function defs(id){
       <stop offset="0" stop-color="var(--land)"/><stop offset="1" stop-color="var(--land-2)"/></linearGradient>
     <linearGradient id="${id}-wtr" x1="0" y1="0" x2="0.3" y2="1">
       <stop offset="0" stop-color="var(--water)"/><stop offset="1" stop-color="var(--water-2)"/></linearGradient>
+    <linearGradient id="${id}-sea" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="var(--sea)"/><stop offset="1" stop-color="var(--sea-2)"/></linearGradient>
     <radialGradient id="${id}-glow"><stop offset="0" stop-color="#fff" stop-opacity=".5"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
     <radialGradient id="${id}-shade"><stop offset="0" stop-color="var(--wash-shade)" stop-opacity=".2"/>
@@ -13,6 +15,13 @@ function defs(id){
     <!-- 밭 이랑 — 갈아놓은 결 -->
     <pattern id="${id}-row" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(28)">
       <path d="M0,0 V7" stroke="#8A7550" stroke-opacity=".13" stroke-width="1.6"/></pattern>
+
+    <!-- 바다 잔물결 — 바다 폴리곤을 이 무늬로 한 번 더 덮는다 -->
+    <pattern id="${id}-wave" width="34" height="30" patternUnits="userSpaceOnUse">
+      <path d="M-17,9 q8.5,-5.5 17,0 t17,0" fill="none" stroke="var(--water-line)"
+            stroke-opacity=".30" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M0,23 q8.5,-5.5 17,0 t17,0" fill="none" stroke="var(--water-line)"
+            stroke-opacity=".20" stroke-width="1.1" stroke-linecap="round"/></pattern>
 
     <!-- 손으로 그린 듯 윤곽을 살짝 흔든다 -->
     <filter id="${id}-hand" x="-3%" y="-3%" width="106%" height="106%">
@@ -120,6 +129,35 @@ function farmland(map){
   return faces + `<g fill="url(#bm-row)" stroke="none">${rows}</g>`;
 }
 
+/* ══ 오타루 바다 ══
+   sea 는 해안선을 타일 둘레로 닫아 만든 폴리곤, isle 은 그 안의 섬이다.
+   바다를 깔고 → 잔물결을 바다 안쪽에만 넣고 → 섬을 뭍 색으로 되덮는다. */
+function seaLayer(R){
+  const map = R.map;
+  if (!map.sea || !map.sea.length) return '';
+  const j = a => a.map(d => `<path d="${d}"/>`).join('');
+  let s = '';
+
+  // 물감이 번진 가장자리 → 본색 → 잔물결 무늬
+  s += `<g fill="var(--sea-2)" opacity=".5" filter="url(#bm-bleed)" transform="translate(1.8,2.6)">${j(map.sea)}</g>`;
+  s += `<g fill="url(#bm-sea)" stroke="var(--water-line)" stroke-width="1.5" stroke-linejoin="round">${j(map.sea)}</g>`;
+  s += `<g fill="url(#bm-wave)" stroke="none">${j(map.sea)}</g>`;
+
+  // 섬 · 암초 — 다시 뭍으로
+  if (map.isle && map.isle.length)
+    s += `<g fill="url(#bm-land)" stroke="var(--water-line)" stroke-width="1.1" stroke-linejoin="round">${j(map.isle)}</g>`;
+  return s;
+}
+
+/* 방파제 · 부두 — 바다 위로 뻗은 콘크리트 */
+function piers(map){
+  const P = map.layers.pier;
+  if (!P || !P.length) return '';
+  const j = a => a.map(d => `<path d="${d}"/>`).join('');
+  return `<g fill="none" stroke="var(--pier-case)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${j(P)}</g>`
+       + `<g fill="none" stroke="var(--pier)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${j(P)}</g>`;
+}
+
 /* 폴리곤 목록의 큰 것들에서 대략 중심·크기를 뽑는다 */
 function blobs(paths, minSide){
   const out = [];
@@ -178,6 +216,7 @@ function terrain(R){
   const map = R.map, P = map.layers;
   const j = a => a.map(d=>`<path d="${d}"/>`).join('');
   const rural = R.kind === 'rural';
+  const coast = R.kind === 'coast';
   let s = '';
 
   const PAD = 60;   // 살짝 번져 나가는 여백만
@@ -187,6 +226,9 @@ function terrain(R){
   else s += washes(map);
 
   s += `<g filter="url(#bm-hand)">`;
+
+  // 바다는 뭍 바로 위 · 다른 모든 것 아래 — 해안선이 도시의 밑그림이 된다
+  if (coast) s += seaLayer(R);
 
   if (rural) s += farmland(map);
 
@@ -218,6 +260,8 @@ function terrain(R){
     s += ribbon(P.road2, 4.4, 3.2, 'var(--road-fill)');
     s += ribbon(P.road1, 6.8, 5.2, 'var(--road-fill)');
   }
+
+  if (coast) s += piers(map);
 
   s += `<g fill="none" stroke="var(--rail)" stroke-width="1.7" stroke-linecap="round">${j(P.rail)}</g>`;
   s += `<g fill="none" stroke="var(--land)" stroke-width="0.9" stroke-dasharray="3 4">${j(P.rail)}</g>`;

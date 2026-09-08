@@ -25,6 +25,8 @@
   --green:var(--park); --park-mid:#BCD4AF; --park-wash:#93B58A;
   --green-2:#6E9679; --green-3:var(--forest); --green-line:#8CAE96;
   --water-2:#74C2D6; --water-line:var(--sapporo-blue);
+  /* 오타루 바다 — 강물보다 한 단계 짙고 차갑게, 방파제는 젖은 콘크리트 */
+  --sea:#7FC3DA; --sea-2:#5AA7C4; --pier:#DCD0BB; --pier-case:#B9A98D;
   --road-fill:var(--road); --road-case:#D3C09F; --road-min:#E9DEC6;
   --rail:#CDBFA4; --wash-shade:#C4B292;
   --icon:#3E5254; --icon-2:#FFFCF3; --roof:#E2856B; --roof-2:#E0A85E;
@@ -130,7 +132,31 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 }
 .regionsw button[aria-pressed="true"]{background:var(--map-ink);color:#FFFCF3}
 .regionsw button:focus-visible{outline:2px solid var(--d13);outline-offset:1px}
-.regionsw .swap{padding:6px 4px 7px;color:var(--ink-3);font-size:11px;pointer-events:none}
+/* 사진이 쌓인 개수 — 어느 지역에 뭐가 있는지 버튼에서 바로 보인다 */
+.regionsw .rc{
+  font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  margin-left:4px;opacity:.72;vertical-align:1px;
+}
+.regionsw .rc:empty{display:none}
+.regionsw button.bare{opacity:.5}
+.regionsw button.bare[aria-pressed="true"]{opacity:1}
+
+/* ── 불러오는 중 · 사진 없음 · 연동 실패 ── */
+.mapstate{
+  position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:9px;padding:26px 30px;text-align:center;
+  background:rgba(255,252,243,.82);backdrop-filter:blur(3px);
+}
+.mapstate .st-t{margin:0;font-family:"Jua",sans-serif;font-size:15px;color:var(--map-ink);line-height:1.5}
+.mapstate .st-n{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.65;max-width:30em}
+.mapstate.warn .st-t{color:#9C5B22}
+.mapstate .spin{
+  width:26px;height:26px;border-radius:50%;
+  border:2.5px solid var(--line);border-top-color:var(--sapporo-blue);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.mapstate .spin{animation-duration:2.4s}}
 
 /* 하단 시트 */
 .sheet{
@@ -174,6 +200,8 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-family:"IBM Plex Mono",monospace;white-space:nowrap;
 }
 .ph .im{position:absolute;inset:0}
+/* 드라이브 썸네일 — 정사각 자리에 꽉 채운다 (색 타일은 div 라 그대로) */
+.ph img.im{width:100%;height:100%;object-fit:cover;display:block;background:var(--line-2)}
 .ph .star{
   position:absolute;right:5px;bottom:5px;width:22px;height:22px;border-radius:50%;
   border:0;background:rgba(15,22,26,.5);color:#fff;font-size:11px;line-height:22px;
@@ -206,8 +234,20 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border-bottom:1.5px solid var(--ink);padding-bottom:1.5cqw}
 .p-head h2{font-size:3.6cqw;letter-spacing:-.02em;line-height:1}
 .p-head .sub{font-family:"IBM Plex Mono",monospace;font-size:1.12cqw;color:var(--ink-2);letter-spacing:.1em;text-align:right;line-height:1.7}
-.p-body{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw;margin:1.7cqw 0 0;min-height:0}
+/* 삿포로를 왼쪽 2/3 에 크게, 오타루·비에이를 오른쪽 1/3 에 위아래로 */
+.p-body{display:grid;grid-template-columns:2fr 1fr;gap:1.6cqw;margin:1.7cqw 0 0;min-height:0}
+.p-side{display:grid;grid-template-rows:1fr 1fr;gap:1.5cqw;min-height:0}
 .p-panel{position:relative;min-height:0;display:flex;flex-direction:column}
+/* 작은 오른쪽 패널은 머리글도 한 단계 작게 */
+.p-side .p-panel .cap{font-size:1.22cqw}
+.p-side .p-panel .cap em{font-size:.88cqw}
+.p-side .p-panel .cap span{font-size:.82cqw}
+/* 그 지역 사진이 아직 없을 때 — 지형만 깔린 패널임을 알려준다 */
+.p-map.nospot::after{
+  content:"사진이 아직 없어요";position:absolute;inset:auto 0 44% 0;text-align:center;
+  font-family:"Jua",sans-serif;font-size:1.15cqw;color:var(--ink-2);
+  text-shadow:0 0 4px var(--map-halo),0 0 4px var(--map-halo),0 0 4px var(--map-halo);
+}
 .p-panel .cap{
   font-family:"Jua",sans-serif;font-size:1.5cqw;color:var(--ink-2);
   display:flex;align-items:baseline;gap:.7cqw;padding-bottom:.5cqw;
@@ -268,6 +308,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border:1px solid var(--line);border-radius:999px;padding:2px 7px;color:var(--ink-3);
   margin-left:auto;flex:0 0 auto;align-self:center;
 }
+.ex-empty{color:var(--ink-3);font-size:13.5px;line-height:1.9;padding:26px 0;text-align:center}
 .exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
 .exphotos::-webkit-scrollbar{display:none}
 .exphotos .ph{flex:0 0 34%;min-width:112px}

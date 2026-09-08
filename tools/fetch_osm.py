@@ -5,7 +5,7 @@
   {w,h,bbox:[S,W,N,E],layers:{green,water,river,road1,road2,road3,rail},bldg:[[d,h,ci]]}
 비에이는 밭 패치워크가 주인공이라 farm 레이어를 더 얹는다: [[d, cls]] (0 밀·1 라벤더·2 감자)
 """
-import json, math, sys, urllib.request, urllib.parse, time
+import json, math, pathlib, sys, urllib.request, urllib.parse, time
 
 ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -29,10 +29,13 @@ def query(q):
     raise SystemExit(f"overpass 실패: {last}")
 
 
-def build_query(s, w, n, e):
+def build_query(s, w, n, e, coast=False):
     bb = f"{s},{w},{n},{e}"
+    sea = (f'  way["natural"="coastline"]({bb});\n'
+           f'  way["man_made"~"^(pier|breakwater|groyne)$"]({bb});\n') if coast else ""
     return f"""[out:json][timeout:280];
 (
+{sea}
   way["highway"~"^(motorway|trunk|primary)$"]({bb});
   way["highway"~"^(secondary|tertiary)$"]({bb});
   way["highway"~"^(unclassified|residential|living_street)$"]({bb});
@@ -46,6 +49,163 @@ def build_query(s, w, n, e):
   way["building"]({bb});
 );
 out geom;"""
+
+
+# ══ 해안선 → 바다 폴리곤 ══════════════════════════════════════════
+# OSM coastline 은 「진행 방향 왼쪽이 뭍, 오른쪽이 바다」로 그려진다.
+# 픽셀 좌표는 y 가 뒤집혀 있으므로 바다 쪽 법선은 (-dy, dx) 가 된다.
+
+EPS = 0.05
+
+def _clip_seg(a, b, w, h):
+    """Liang–Barsky — 선분을 [0,w]×[0,h] 로 자른다. 밖이면 None."""
+    x0, y0 = a; x1, y1 = b
+    dx, dy = x1 - x0, y1 - y0
+    t0, t1 = 0.0, 1.0
+    for pq in ((-dx, x0), (dx, w - x0), (-dy, y0), (dy, h - y0)):
+        pp, qq = pq
+        if pp == 0:
+            if qq < 0:
+                return None
+            continue
+        r = qq / pp
+        if pp < 0:
+            if r > t1: return None
+            if r > t0: t0 = r
+        else:
+            if r < t0: return None
+            if r < t1: t1 = r
+    return ((x0 + t0 * dx, y0 + t0 * dy), (x0 + t1 * dx, y0 + t1 * dy), t0 <= 0, t1 >= 1)
+
+
+def clip_polyline(pts, w, h):
+    """폴리라인을 사각형 안쪽 조각들로 자른다."""
+    out, cur = [], None
+    for i in range(len(pts) - 1):
+        r = _clip_seg(pts[i], pts[i + 1], w, h)
+        if r is None:
+            if cur and len(cur) > 1: out.append(cur)
+            cur = None
+            continue
+        a, b, entered, exited = r
+        if cur is None or math.dist(cur[-1], a) > EPS:
+            if cur and len(cur) > 1: out.append(cur)
+            cur = [a]
+        cur.append(b)
+        if not exited:                     # 사각형 밖으로 나갔다 — 조각 끊기
+            out.append(cur); cur = None
+    if cur and len(cur) > 1: out.append(cur)
+    return out
+
+
+def join_chains(pieces):
+    """끝점이 맞닿은 조각들을 이어 붙인다."""
+    chains = [list(p) for p in pieces]
+    merged = True
+    while merged:
+        merged = False
+        for i in range(len(chains)):
+            for j in range(len(chains)):
+                if i == j or not chains[i] or not chains[j]:
+                    continue
+                a, b = chains[i], chains[j]
+                if math.dist(a[0], a[-1]) < EPS:      # 이미 닫힌 고리
+                    continue
+                if math.dist(a[-1], b[0]) < EPS:
+                    chains[i] = a + b[1:]; chains[j] = []; merged = True; break
+            if merged: break
+        chains = [c for c in chains if c]
+    return chains
+
+
+def _shoelace(pts):
+    a = 0.0
+    for i in range(len(pts)):
+        x0, y0 = pts[i]; x1, y1 = pts[(i + 1) % len(pts)]
+        a += x0 * y1 - x1 * y0
+    return a / 2
+
+
+def _perim_t(p, w, h):
+    """사각형 둘레 위 위치 → 0~4 파라미터 (좌상단에서 시계방향). 경계가 아니면 None."""
+    x, y = p; e = 0.6
+    if y <= e:      return 0 + min(max(x / w, 0), 1)
+    if x >= w - e:  return 1 + min(max(y / h, 0), 1)
+    if y >= h - e:  return 2 + min(max((w - x) / w, 0), 1)
+    if x <= e:      return 3 + min(max((h - y) / h, 0), 1)
+    return None
+
+
+_CORNERS = {1: None, 2: None, 3: None, 0: None}   # t=1 우상 · 2 우하 · 3 좌하 · 0 좌상
+
+
+def _walk(t0, t1, w, h, forward):
+    """사각형 둘레를 t0 → t1 로 따라가며 지나치는 모서리를 순서대로 모은다."""
+    C = {1: (w, 0.0), 2: (w, h), 3: (0.0, h), 0: (0.0, 0.0)}
+    span = (t1 - t0) % 4 if forward else (t0 - t1) % 4
+    out = []
+    for k in range(1, 5):
+        kk = (math.floor(t0) + k) if forward else (math.ceil(t0) - k)
+        d = ((kk - t0) % 4) if forward else ((t0 - kk) % 4)
+        if 1e-9 < d < span - 1e-9:
+            out.append(C[kk % 4])
+    return out
+
+
+def _inside(poly, pt):
+    x, y = pt; c = False
+    for i in range(len(poly)):
+        x0, y0 = poly[i]; x1, y1 = poly[(i + 1) % len(poly)]
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+            c = not c
+    return c
+
+
+def _water_probe(chain, w, h):
+    """체인 위 한 점에서 바다 쪽으로 살짝 들어간 시험점."""
+    n = len(chain)
+    for m in [n // 2] + list(range(1, n)):
+        a, b = chain[m - 1], chain[m]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L = math.hypot(dx, dy)
+        if L < 1e-6:
+            continue
+        ux, uy = -dy / L, dx / L                        # 바다 쪽 법선
+        px, py = (a[0] + b[0]) / 2 + ux * 1.2, (a[1] + b[1]) / 2 + uy * 1.2
+        if 0.5 < px < w - 0.5 and 0.5 < py < h - 0.5:
+            return (px, py)
+    return None
+
+
+def sea_polygons(ways, w, h):
+    """해안선 way 목록 → (바다 폴리곤, 섬 폴리곤)."""
+    pieces = []
+    for pts in ways:
+        pieces += clip_polyline(pts, w, h)
+    sea, isle = [], []
+    for ch in join_chains(pieces):
+        if len(ch) < 3:
+            continue
+        if math.dist(ch[0], ch[-1]) < EPS:              # 닫힌 고리 — 섬 또는 호수
+            ring = ch[:-1]
+            (isle if _shoelace(ring) < 0 else sea).append(ring)
+            continue
+        # 타일 가장자리를 살짝 스치고 지나가는 부스러기(하구·방파제 조각 등).
+        # 둘레를 돌아 닫으면 타일 전체를 바다로 칠해버리니 먼저 버린다.
+        if sum(math.dist(ch[i], ch[i + 1]) for i in range(len(ch) - 1)) < 12:
+            continue
+        t0, t1 = _perim_t(ch[-1], w, h), _perim_t(ch[0], w, h)
+        if t0 is None or t1 is None:                    # 양끝이 경계에 안 닿음 — 버린다
+            continue
+        probe = _water_probe(ch, w, h)
+        if probe is None:
+            continue
+        cands = [ch + _walk(t0, t1, w, h, True), ch + _walk(t0, t1, w, h, False)]
+        pick = next((c for c in cands if _inside(c, probe)), None)
+        # 타일을 거의 다 덮는 답은 틀린 답이다 — 뭍이 있는 타일에서만 해안선을 뽑으므로.
+        if pick and abs(_shoelace(pick)) < w * h * 0.92:
+            sea.append(pick)
+    return sea, isle
 
 
 def simplify(pts, tol):
@@ -87,7 +247,7 @@ def area(pts):
     return abs(a) / 2
 
 
-def run(name, s, w, n, e, farm=False, out=None):
+def run(name, s, w, n, e, farm=False, coast=False, out=None):
     W_PX = 1000.0
     kx = math.cos((s + n) / 2 * math.pi / 180)
     spx, spy = (e - w) * kx, (n - s)
@@ -97,12 +257,12 @@ def run(name, s, w, n, e, farm=False, out=None):
         return ((lon - w) * kx / spx * W_PX, (n - lat) / spy * h_px)
 
     sys.stderr.write(f"[{name}] overpass 요청 …\n")
-    data = query(build_query(s, w, n, e))
+    data = query(build_query(s, w, n, e, coast))
     els = data.get("elements", [])
     sys.stderr.write(f"[{name}] {len(els)} elements\n")
 
-    L = {k: [] for k in ("green", "water", "river", "stream", "road1", "road2", "road3", "rail")}
-    farms, bldg = [], []
+    L = {k: [] for k in ("green", "water", "river", "stream", "road1", "road2", "road3", "rail", "pier")}
+    farms, bldg, coast_ways = [], [], []
     ROAD1 = {"motorway", "trunk", "primary"}
     ROAD2 = {"secondary", "tertiary"}
     FARM = {"farmland", "meadow", "orchard", "vineyard", "grass"}
@@ -113,6 +273,15 @@ def run(name, s, w, n, e, farm=False, out=None):
         if len(pts) < 2:
             continue
         t = el.get("tags") or {}
+
+        if coast and t.get("natural") == "coastline":
+            coast_ways.append(pts)
+            continue
+        if coast and t.get("man_made") in ("pier", "breakwater", "groyne"):
+            d = path(simplify(pts, 0.8), False)
+            if d:
+                L["pier"].append(d)
+            continue
 
         if "building" in t:
             p = simplify(pts, 0.7)
@@ -171,6 +340,11 @@ def run(name, s, w, n, e, farm=False, out=None):
            "layers": L, "bldg": bldg}
     if farm:
         res["farm"] = farms
+    if coast:
+        seas, isles = sea_polygons(coast_ways, W_PX, h_px)
+        res["sea"]  = [d for d in (path(simplify(q, 0.6), True) for q in seas) if d]
+        res["isle"] = [d for d in (path(simplify(q, 0.6), True) for q in isles) if d]
+        sys.stderr.write(f"[{name}] coast ways:{len(coast_ways)}  sea:{len(res['sea'])}  isle:{len(res['isle'])}  pier:{len(L['pier'])}\n")
     txt = json.dumps(res, separators=(",", ":"))
     (open(out, "w") if out else sys.stdout).write(txt)
     sys.stderr.write(f"[{name}] {len(txt)//1024} KB  " +
@@ -178,6 +352,15 @@ def run(name, s, w, n, e, farm=False, out=None):
                      f"  bldg:{len(bldg)}  farm:{len(farms)}\n")
 
 
+TARGETS = {
+    # 이름:        (S,      W,       N,      E,      옵션)
+    "sapporo": (43.02, 141.28, 43.11, 141.41, {}),
+    "otaru":   (43.16, 140.96, 43.24, 141.06, {"coast": True}),
+    "biei":    (43.40, 142.38, 43.64, 142.66, {"farm": True}),
+}
+
 if __name__ == "__main__":
-    run("biei", 43.40, 142.38, 43.64, 142.66, farm=True,
-        out="/Users/seunghunji/sapporo-trip-map/tools/biei.json")
+    here = pathlib.Path(__file__).resolve().parent
+    for name in (sys.argv[1:] or ["biei"]):
+        S, W, N, E, opt = TARGETS[name]
+        run(name, S, W, N, E, out=str(here / f"{name}.json"), **opt)

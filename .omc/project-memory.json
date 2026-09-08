@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1788874798130,
+  "projectRoot": "/Users/seunghunji/sapporo-trip-map",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 7,
+      "lastAccessed": 1788874798097,
+      "keyFiles": [
+        "01-data.js",
+        "02-art.js",
+        "03-terrain.js",
+        "04-illust.js",
+        "05-render.js"
+      ]
+    },
+    "tools": {
+      "path": "tools",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1788874798098,
+      "keyFiles": [
+        "biei.json",
+        "biei_dem.json",
+        "build.py",
+        "fetch_dem.py",
+        "fetch_osm.py"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/03-terrain.js",
+      "accessCount": 6,
+      "lastAccessed": 1788879261148,
+      "type": "file"
+    },
+    {
+      "path": "src/style.css",
+      "accessCount": 5,
+      "lastAccessed": 1788879213682,
+      "type": "file"
+    },
+    {
+      "path": "src/02-art.js",
+      "accessCount": 2,
+      "lastAccessed": 1788878892887,
+      "type": "file"
+    },
+    {
+      "path": "tools/fetch_osm.py",
+      "accessCount": 1,
+      "lastAccessed": 1788878526150,
+      "type": "file"
+    },
+    {
+      "path": "src/01-data.js",
+      "accessCount": 1,
+      "lastAccessed": 1788878784667,
+      "type": "file"
+    },
+    {
+      "path": "src/04-illust.js",
+      "accessCount": 1,
+      "lastAccessed": 1788878910639,
+      "type": "file"
+    },
+    {
+      "path": "src/05-render.js",
+      "accessCount": 1,
+      "lastAccessed": 1788879041339,
+      "type": "file"
+    },
+    {
+      "path": "src/06-load.js",
+      "accessCount": 1,
+      "lastAccessed": 1788879123806,
+      "type": "file"
+    },
+    {
+      "path": "src/index.template.html",
+      "accessCount": 1,
+      "lastAccessed": 1788879159602,
+      "type": "file"
+    },
+    {
+      "path": "tools/apps-script/Code.gs",
+      "accessCount": 1,
+      "lastAccessed": 1788879299116,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

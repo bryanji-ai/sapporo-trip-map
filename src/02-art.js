@@ -40,6 +40,26 @@ function butterfly(x,y,k,c){
 }
 
 /* ══ 랜드마크 삽화 — 아래 가운데(0,0)를 기준으로 위로 자란다 ══ */
+/* 갈매기 — 오타루 항구 하늘에 흩뿌린다 */
+function gull(x,y,k){
+  return `<g transform="translate(${f1(x)},${f1(y)})">
+    <path d="M${-9*k},0 q${4.4*k},${-5.2*k} ${9*k},${-.6*k} q${4.6*k},${-4.6*k} ${9*k},${.6*k}"
+          fill="none" stroke="${IK}" stroke-width="${1.9*k}" stroke-linecap="round"/>
+    <circle cx="0" cy="${-.2*k}" r="${1.5*k}" fill="${IK}"/></g>`;
+}
+
+/* 운하 가스등 — 저녁의 오타루 */
+function gasLamp(k){
+  return `<g>
+    <path d="M0,0 v${-19*k}" stroke="${IK}" stroke-width="${2*k}" stroke-linecap="round"/>
+    <ellipse cx="0" cy="0" rx="${4.2*k}" ry="${1.5*k}" fill="${IK}" opacity=".2"/>
+    <circle cx="0" cy="${-22.4*k}" r="${6.4*k}" fill="#F6D98A" opacity=".38"/>
+    <path d="M${-3.4*k},${-19*k} l${1.2*k},${-6*k} h${4.4*k} l${1.2*k},${6*k} Z"
+          fill="#FFE9A8" stroke="${IK}" stroke-width="${1.5*k}" stroke-linejoin="round"/>
+    <path d="M${-4*k},${-25*k} h${8*k}" stroke="${IK}" stroke-width="${1.5*k}" stroke-linecap="round"/>
+    <circle cx="0" cy="${-27*k}" r="${1.3*k}" fill="${IK}"/></g>`;
+}
+
 const ICON = {
   station: k=>`<rect x="${-18*k}" y="${-16*k}" width="${36*k}" height="${16*k}" rx="${2*k}" fill="#EFDCBB" stroke="var(--icon)" stroke-width="${1.6*k}"/>
     <rect x="${-20*k}" y="${-20*k}" width="${40*k}" height="${4.4*k}" rx="${1.8*k}" fill="#D9B98C" stroke="var(--icon)" stroke-width="${1.5*k}"/>
@@ -128,6 +148,37 @@ const ICON = {
     <path d="M${-7*k},${-6*k} q${2.5*k},${-2*k} ${5*k},0 M${1*k},${-3*k} q${2.5*k},${-2*k} ${5*k},0" stroke="var(--icon-2)" stroke-width="${1.3*k}" fill="none" stroke-linecap="round"/>
     <path d="M${-13*k},${-9*k} q${-1*k},${-6*k} ${3*k},${-7*k}" stroke="var(--green-line)" stroke-width="${1.6*k}" fill="none" stroke-linecap="round"/>
     <circle cx="${-10.5*k}" cy="${-16.5*k}" r="${3*k}" fill="var(--green)" stroke="var(--icon)" stroke-width="${1.3*k}"/>`,
+
+  /* ══ 오타루 전용 ══ */
+  /* 운하 석조창고 — 물 위에 비친 그림자까지 */
+  warehouse: k=>`<path d="M${-17*k},${-3*k} h${34*k} v${3*k} h${-34*k} Z" fill="var(--water)" stroke="var(--water-line)" stroke-width="${1.2*k}"/>
+    <rect x="${-15*k}" y="${-17*k}" width="${30*k}" height="${14*k}" rx="${1.4*k}" fill="#C9B79A" stroke="var(--icon)" stroke-width="${1.6*k}"/>
+    <path d="M${-16.6*k},${-17*k} L${-12*k},${-23.4*k} L${12*k},${-23.4*k} L${16.6*k},${-17*k} Z" fill="var(--roof-2)" stroke="var(--icon)" stroke-width="${1.5*k}" stroke-linejoin="round"/>
+    <g fill="#FFF1D8" stroke="var(--icon)" stroke-width="${1.1*k}">
+      <rect x="${-11.4*k}" y="${-13.6*k}" width="${4.6*k}" height="${5.6*k}" rx="${1.3*k}"/>
+      <rect x="${-2.3*k}" y="${-13.6*k}" width="${4.6*k}" height="${5.6*k}" rx="${1.3*k}"/>
+      <rect x="${6.8*k}" y="${-13.6*k}" width="${4.6*k}" height="${5.6*k}" rx="${1.3*k}"/></g>
+    <path d="M${-13*k},${-21*k} h${26*k}" stroke="var(--icon-2)" stroke-width="${1.2*k}" opacity=".7"/>
+    <path d="M${-8*k},0 q${2.6*k},${-1.6*k} ${5.2*k},0 M${3*k},${-1*k} q${2.6*k},${-1.6*k} ${5.2*k},0"
+          fill="none" stroke="var(--water-line)" stroke-width="${1.1*k}" stroke-linecap="round"/>`,
+
+  /* 어선 — 항구와 바다 장식에 함께 쓴다 */
+  boat: k=>`<path d="M${-13*k},${-5.6*k} h${26*k} l${-4.4*k},${5.6*k} h${-17.2*k} Z" fill="#E9E2D2" stroke="var(--icon)" stroke-width="${1.6*k}" stroke-linejoin="round"/>
+    <path d="M${-13*k},${-5.6*k} h${26*k}" stroke="#C05B4A" stroke-width="${1.8*k}"/>
+    <rect x="${-5*k}" y="${-12.4*k}" width="${9.4*k}" height="${6.8*k}" rx="${1.4*k}" fill="#FFFDF6" stroke="var(--icon)" stroke-width="${1.4*k}"/>
+    <path d="M${6.6*k},${-5.6*k} v${-11*k}" stroke="var(--icon)" stroke-width="${1.4*k}" stroke-linecap="round"/>
+    <path d="M${6.6*k},${-16*k} L${13*k},${-11.6*k} L${6.6*k},${-9.6*k} Z" fill="#D8503F" stroke="var(--icon)" stroke-width="${1.2*k}" stroke-linejoin="round"/>
+    <path d="M${-14*k},${1.4*k} q${3*k},${-1.9*k} ${6*k},0 t${6*k},0 t${6*k},0"
+          fill="none" stroke="var(--water-line)" stroke-width="${1.3*k}" stroke-linecap="round"/>`,
+
+  /* 스시야도리 — 접시에 올린 초밥 두 점 */
+  sushi: k=>`<ellipse cx="0" cy="${-1.4*k}" rx="${15*k}" ry="${4.6*k}" fill="#FFFDF6" stroke="var(--icon)" stroke-width="${1.5*k}"/>
+    <g stroke="var(--icon)" stroke-width="${1.4*k}" stroke-linejoin="round">
+      <rect x="${-12*k}" y="${-8.6*k}" width="${11*k}" height="${6.2*k}" rx="${2.6*k}" fill="#FFF6E4"/>
+      <path d="M${-12.6*k},${-8.6*k} q${6.1*k},${-4.2*k} ${12.2*k},0 Z" fill="#E4785C"/>
+      <rect x="${1.4*k}" y="${-8.6*k}" width="${11*k}" height="${6.2*k}" rx="${2.6*k}" fill="#FFF6E4"/>
+      <path d="M${0.8*k},${-8.6*k} q${6.1*k},${-4.2*k} ${12.2*k},0 Z" fill="#EFA860"/></g>
+    <path d="M${-9*k},${-11.4*k} q${3*k},${-1.8*k} ${6*k},0" fill="none" stroke="#7FA05E" stroke-width="${1.3*k}" stroke-linecap="round"/>`,
 
   /* ══ 비에이 전용 ══ */
   /* 사계채의 언덕 — 색색 이랑이 그려진 언덕 */

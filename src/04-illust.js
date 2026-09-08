@@ -81,5 +81,43 @@ function illustBiei(W,H){
   return s;
 }
 
+/* ── 오타루 — 갈매기 · 가스등 · 초밥 · 유리 ── */
+function illustOtaru(W,H){
+  const K = W/548, X = f=>f*W, Y = f=>f*H;
+  let s = '';
+
+  /* 바다 쪽 하늘에 갈매기 — 오른쪽 위가 이시카리 만이다 */
+  [[.640,.055,1.15],[.735,.112,.92],[.828,.062,1.05],[.882,.168,.82],
+   [.700,.208,.78],[.930,.088,.72],[.588,.148,.70],[.792,.245,.68]]
+    .forEach(([fx,fy,k]) => s += gull(X(fx), Y(fy), k*K));
+
+  /* 눈꽃 몇 점 */
+  [[.075,.132,5.4],[.168,.058,4.2],[.045,.372,4.8],[.905,.428,4.6],
+   [.302,.925,4.0],[.512,.808,4.2],[.958,.712,4.4],[.212,.652,3.8]]
+    .forEach(([fx,fy,r]) => s += snowflake(X(fx), Y(fy), r*K, .85));
+
+  /* 왼쪽 위 — 운하 가스등 두 개 */
+  s += `<g transform="translate(${f1(X(.072))},${f1(Y(.238))})">${gasLamp(1.05*K)}</g>`;
+  s += `<g transform="translate(${f1(X(.152))},${f1(Y(.192))})">${gasLamp(.78*K)}</g>`;
+  s += handText(X(.145), Y(.315), ['해 지면','가스등 켜져'], 12*K, -6, true);
+
+  /* 왼쪽 아래 — 초밥 먹는 곰 */
+  s += handText(X(.128), Y(.512), ['오타루는','초밥이지!'], 13*K, -5, true);
+  s += `<g transform="translate(${f1(X(.098))},${f1(Y(.622))})">${seafoodBowl(1.05*K)}</g>`;
+  s += `<g transform="translate(${f1(X(.208))},${f1(Y(.634))})">${bear(1.0*K,{scarf:'#4A7FA8'})}</g>`;
+
+  /* 가운데 아래 — 배낭 멘 곰, 운하 산책 */
+  s += `<g transform="translate(${f1(X(.398))},${f1(Y(.918))})">${bearHiker(1.20*K)}</g>`;
+  s += handText(X(.478), Y(.845), ['운하 한 바퀴','더 돌자 ♥'], 12*K, -5, false);
+  s += heart(X(.318), Y(.848), 5.0*K, '#E05C4E');
+  s += heart(X(.295), Y(.892), 3.4*K, '#E9857A');
+
+  /* 오른쪽 아래 — 소프트크림 (기타이치 홀 근처) */
+  s += `<g transform="translate(${f1(X(.902))},${f1(Y(.888))})">${softCream(1.25*K)}</g>`;
+
+  return s;
+}
+
 REGIONS.sapporo.illust = illustSapporo;
+REGIONS.otaru.illust   = illustOtaru;
 REGIONS.biei.illust    = illustBiei;

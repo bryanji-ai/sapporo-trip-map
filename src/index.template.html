@@ -22,35 +22,35 @@ img{max-width:100%}
 <svg id="sharedefs" aria-hidden="true"></svg>
 
 <div class="notice">
-  <b>샘플이에요</b> — 지도와 지형은 실제 삿포로·비에이, 장소와 사진은 예시입니다.
+  <b>사진을 올리면 핀이 생겨요</b> — 드라이브 「삿포로여행_사진」 폴더의 사진에서 위치를 읽어 지도에 올립니다.
 </div>
 
 <div class="switch">
-  <div class="brand">후니와 어니의 홋카이도 <em>SAMPLE</em></div>
+  <div class="brand">후니와 어니의 홋카이도</div>
   <button class="tab" id="t-screen" aria-selected="true">지도</button>
   <button class="tab" id="t-expand" aria-selected="false">펼쳐보기</button>
   <button class="tab" id="t-print" aria-selected="false">인쇄</button>
 </div>
 
 <section class="intro" id="intro">
-  <h1>이런 걸 만들어보려고 해요</h1>
-  <p>홋카이도에 다녀오면 <b>우리가 간 곳이 지도에 남는 기록</b>을 만들려고 합니다.
-     아래는 그 모양을 미리 본 것이고, <b>지도는 진짜 삿포로와 비에이</b>지만
-     <b>장소와 사진은 전부 예시</b>예요. 사진 자리는 색 타일로 채워뒀습니다.</p>
+  <h1>사진만 올리면 지도가 채워져요</h1>
+  <p>홋카이도에 다녀오면 <b>우리가 간 곳이 지도에 남는 기록</b>이 됩니다.
+     사진에 박힌 <b>위치 정보(GPS)</b>를 읽어 <b>삿포로 · 오타루 · 비에이</b> 중
+     어느 지도에 찍을지 자동으로 골라줘요.</p>
 
   <div class="how">
     <div class="step"><span class="no">1</span>
       <b>여행 중엔 사진만 올리면 돼요</b>
-      <em>공유 드라이브 「홋카이도여행_사진」에 던져두기만 하면 날짜별 정리는 자동이에요.</em></div>
+      <em>공유 드라이브 「삿포로여행_사진」에 던져두기만 하면 날짜별 정리는 자동이에요.</em></div>
     <div class="step"><span class="no">2</span>
       <b>밤에 지도를 열어 별표를 눌러요</b>
       <em>다녀온 곳이 지도에 하나씩 쌓입니다. 마음에 드는 사진에 별표를 누르면 그게 대표 사진이 돼요.</em></div>
     <div class="step"><span class="no">3</span>
       <b>돌아와서 인쇄해요</b>
-      <em>삿포로와 비에이를 한 장에 담은 포스터가 나옵니다. 액자에 넣을 수 있게요.</em></div>
+      <em>삿포로 · 오타루 · 비에이를 한 장에 담은 포스터가 나옵니다. 액자에 넣을 수 있게요.</em></div>
   </div>
 
-  <p class="ask">지도 왼쪽 위의 <b>삿포로 ↔ 비에이</b>를 눌러 두 지역을 오가고,
+  <p class="ask">지도 왼쪽 위의 <b>삿포로 · 오타루 · 비에이</b>를 눌러 세 지역을 오가고,
      위쪽 <b>지도 · 펼쳐보기 · 인쇄</b> 세 개도 눌러봐요.
      색이나 배치 중에 마음에 안 드는 게 있으면 알려줘요.</p>
 </section>
@@ -64,11 +64,12 @@ img{max-width:100%}
   <div class="mapwrap">
     <svg id="mapbase" aria-hidden="true"></svg><svg id="mapover" role="img" aria-label="여행 지도"></svg><svg id="mapillust" aria-hidden="true"></svg>
     <div class="regionsw" role="group" aria-label="지역 전환">
-      <button data-g="sapporo" aria-pressed="true">삿포로</button>
-      <span class="swap">↔</span>
-      <button data-g="biei" aria-pressed="false">비에이</button>
+      <button data-g="sapporo" aria-pressed="true">삿포로<em class="rc"></em></button>
+      <button data-g="otaru" aria-pressed="false">오타루<em class="rc"></em></button>
+      <button data-g="biei" aria-pressed="false">비에이<em class="rc"></em></button>
     </div>
     <div class="scalebar"><i style="--w:74px"></i><span>500 m</span></div>
+    <div class="mapstate" id="mapstate" role="status" hidden></div>
   </div>
 
   <p class="hint">핀 색은 장소 종류, 크기는 사진 수예요. 누르면 그곳에서 찍은 사진이 열립니다.</p>
@@ -77,7 +78,7 @@ img{max-width:100%}
 <section class="printview" id="printview">
   <div class="pnote">
     <span><b>A2 가로</b> 594 × 420 mm</span>
-    <span>삿포로와 비에이를 한 장에</span>
+    <span>삿포로 · 오타루 · 비에이를 한 장에</span>
     <span>지도는 벡터라 확대해도 선이 뭉개지지 않습니다</span>
   </div>
   <div class="poster">
@@ -86,13 +87,19 @@ img{max-width:100%}
       <div class="sub">2026.09.11 — 09.14<br>HOKKAIDO</div>
     </div>
     <div class="p-body">
-      <div class="p-panel">
-        <div class="cap">삿포로 <em>札幌</em><span>9/11 · 13 · 14</span></div>
+      <div class="p-panel big">
+        <div class="cap">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
-      <div class="p-panel">
-        <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span>9/12</span></div>
-        <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
+      <div class="p-side">
+        <div class="p-panel">
+          <div class="cap">오타루 <em>小樽</em><span></span></div>
+          <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
+        </div>
+        <div class="p-panel">
+          <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
+          <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
+        </div>
       </div>
     </div>
     <div class="p-foot">
@@ -104,7 +111,7 @@ img{max-width:100%}
 <section class="expand" id="expand">
   <div class="ex-head">
     <h1>다시 걸어보기</h1>
-    <p>9월 11일 오후부터 14일 낮까지, 간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
+    <p>간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
   </div>
   <div id="exbody"></div>
 </section>

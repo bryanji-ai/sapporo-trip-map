@@ -1,12 +1,39 @@
 /* ══ 공용 defs 한 번만 ══ */
 document.getElementById('sharedefs').innerHTML = defs('bm');
 
-/* ── 사진 자리 표시 (샘플) ── */
-function thumb(seed){
+/* ══ 사진 ══
+   드라이브 파일 id 가 있으면 실제 썸네일, 없으면 색 타일로 자리만 잡는다. */
+const photoUrl = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
+
+function heroShot(p){
+  if (!p.shots || !p.shots.length) return null;
+  return p.shots[p.hero] || p.shots[0];
+}
+function tile(seed){
   const h = (seed*47)%360, h2 = (h+38)%360;
   return `<div class="im" style="background:linear-gradient(${140+seed*13%80}deg,hsl(${h} 34% 62%),hsl(${h2} 30% 41%))"></div>`;
 }
+/* 시트·펼쳐보기에 들어갈 사진 한 장 */
+function shotImg(p, k, seed, w){
+  const s = p.shots && p.shots[k];
+  return s && s.id
+    ? `<img class="im" loading="lazy" decoding="async" src="${photoUrl(s.id, w)}" alt="">`
+    : tile(seed);
+}
 function hue(seed){ return [(seed*47)%360, (seed*47+38)%360]; }
+
+/* ══════════ 화면 상태 (불러오는 중 · 없음 · 실패) ══════════ */
+const mapstate = document.getElementById('mapstate');
+
+function showState(kind, title, note){
+  if (!kind){ mapstate.hidden = true; mapstate.innerHTML = ''; return; }
+  mapstate.hidden = false;
+  mapstate.className = `mapstate ${kind}`;
+  mapstate.innerHTML =
+    (kind === 'loading' ? '<div class="spin" aria-hidden="true"></div>' : '')
+    + `<p class="st-t">${title}</p>`
+    + (note ? `<p class="st-n">${note}</p>` : '');
+}
 
 /* ══════════ 화면용 지도 ══════════ */
 let current = 'sapporo';
@@ -61,11 +88,18 @@ function drawScreen(){
 
   document.getElementById('rgname').textContent = R.name;
   document.getElementById('rgjp').textContent = R.jp;
+
+  // 이 지역에만 사진이 없을 때 — 전체가 비었을 때의 안내는 06-load.js 가 띄운다
+  if (PLACES.length && !vs.length)
+    showState('none', `${R.name}에서 찍은 사진이 아직 없어요.`,
+              '이 지역 사진을 드라이브에 올리면 핀이 생깁니다.');
+  else if (PLACES.length)
+    showState(null);
 }
 
 /* ── 지역 전환 ── */
 function setRegion(g){
-  if (g === current) return;
+  if (g === current || !REGIONS[g]) return;
   current = g;
   closeSheet(true);
   document.querySelectorAll('.regionsw button').forEach(b =>
@@ -78,6 +112,16 @@ document.querySelector('.regionsw').addEventListener('click', e => {
   if (b) setRegion(b.dataset.g);
 });
 
+/* 지역별 사진 수를 전환 버튼에 붙인다 — 어디에 뭐가 쌓였는지 바로 보이게 */
+function markRegionCounts(){
+  document.querySelectorAll('.regionsw button[data-g]').forEach(b => {
+    const n = placesOf(b.dataset.g).length;
+    b.classList.toggle('bare', n === 0);
+    const c = b.querySelector('.rc');
+    if (c) c.textContent = n ? n : '';
+  });
+}
+
 /* ══════════ 하단 시트 ══════════ */
 const sheet = document.getElementById('sheet');
 let allPhotos = false;
@@ -85,16 +129,16 @@ function openPin(i){
   const p = PLACES[i]; if(!p) return;
   if (p.g !== current) current = p.g;
   openIdx = i;
-  const day = DAYS.find(d=>d.id===p.d);
+  const day = dayOf(p.d);
   const c = `var(${day.c})`;
   const shown = allPhotos ? p.ph : Math.min(p.ph, 8);
   let ph = '';
   for (let k=0;k<shown;k++)
-    ph += `<div class="ph">${thumb(i*7+k)}<button class="star" aria-pressed="${k===p.hero}" aria-label="대표 사진">★</button></div>`;
+    ph += `<div class="ph">${shotImg(p,k,i*7+k,400)}<button class="star" aria-pressed="${k===p.hero}" aria-label="대표 사진">★</button></div>`;
   document.getElementById('sheetin').innerHTML =
     `<div class="sheet-head">
        <div class="day" style="color:${c}"><i style="background:${c}"></i>${day.label} · ${p.t}</div>
-       <h2>${p.n}</h2><div class="jp">${p.j}</div>
+       <h2>${p.n}</h2>${p.j ? `<div class="jp">${p.j}</div>` : ''}
      </div>
      <div class="photos${allPhotos?' all':''}">${ph}</div>
      ${p.ph > 8 ? `<button class="more" id="more">${allPhotos ? '접기' : `사진 ${p.ph}장 모두 보기`}</button>` : ''}
@@ -124,7 +168,12 @@ sheet.addEventListener('click', e => {
   const stars = [...sheet.querySelectorAll('.star')];
   stars.forEach(s => s.setAttribute('aria-pressed','false'));
   b.setAttribute('aria-pressed','true');
-  if (openIdx >= 0) { PLACES[openIdx].hero = stars.indexOf(b); posterRefresh(); buildExpand(); }
+  if (openIdx >= 0){
+    const p = PLACES[openIdx];
+    p.hero = stars.indexOf(b);
+    saveHero(p);                 // 웹앱에도 알려 다음에 열 때 유지되게
+    posterRefresh(); buildExpand();
+  }
 });
 
 /* ── 아래로 밀어서 닫기 ── */
@@ -164,8 +213,13 @@ sheet.addEventListener('click', e => {
   sheet.addEventListener('pointercancel', end);
 })();
 
-/* ══════════ 인쇄 포스터 — 삿포로 + 비에이 한 장 ══════════ */
-const MAXCARD = 7;   // 한쪽에 세울 사진 카드 수
+/* ══════════ 인쇄 포스터 — 삿포로 + 오타루 + 비에이 한 장 ══════════
+   삿포로는 왼쪽에 크게(2/3), 오타루·비에이는 오른쪽에 위아래로(1/3). */
+const PANELS = [
+  {key:'sapporo', side:'L', max:7, base:'pbase-s', over:'pover-s'},
+  {key:'otaru',   side:'R', max:4, base:'pbase-o', over:'pover-o'},
+  {key:'biei',    side:'R', max:4, base:'pbase-b', over:'pover-b'}
+];
 
 /* 같은 장소를 여러 번 갔으면 하나로 합친다 (사진이 가장 많은 방문을 대표로) */
 function mergeSpots(R){
@@ -182,10 +236,10 @@ function mergeSpots(R){
   }).sort((a,b) => a.y - b.y);
 }
 
-function drawPanel(R, side, baseEl, overEl){
+function drawPanel(R, side, baseEl, overEl, maxCard){
   const spots = mergeSpots(R);
   // 카드는 사진 많은 곳 우선 — 자리 이상으로는 세우지 않는다
-  const rank = [...spots].sort((a,b)=>b.ph-a.ph).slice(0, MAXCARD);
+  const rank = [...spots].sort((a,b)=>b.ph-a.ph).slice(0, maxCard);
   const carded = spots.filter(s => rank.includes(s));
 
   // 패널의 실제 가로세로비에 viewBox를 맞춘다 (레터박스 없이)
@@ -218,7 +272,7 @@ function drawPanel(R, side, baseEl, overEl){
     next = carded[i].cy - step;
   }
 
-  let grads = '', g = '';
+  let grads = '', clips = '', g = '';
   // 카드 없는 곳도 핀은 찍는다
   spots.filter(s => !carded.includes(s)).forEach(s => {
     g += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${(bh*0.0058).toFixed(2)}"
@@ -226,10 +280,7 @@ function drawPanel(R, side, baseEl, overEl){
   });
   carded.forEach((s,n) => {
     const c = `var(${CAT[s.k].c})`;
-    const [h1,h2] = hue(s.src*7 + PLACES[s.src].hero);
-    const gid = `pg-${R.key}-${n}`;
-    grads += `<linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="hsl(${h1} 34% 62%)"/><stop offset="1" stop-color="hsl(${h2} 30% 41%)"/></linearGradient>`;
+    const gid = `pg-${R.key}-${n}`, cid = `pc-${R.key}-${n}`;
 
     // 핀 → 사진 모서리로 잇는 실
     const ax = side==='L' ? s.cx + CW : s.cx;
@@ -237,15 +288,25 @@ function drawPanel(R, side, baseEl, overEl){
     g += `<path class="leader" d="M${s.x.toFixed(1)},${s.y.toFixed(1)} L${((s.x+ax)/2).toFixed(1)},${ay.toFixed(1)} L${ax.toFixed(1)},${ay.toFixed(1)}"/>`;
     g += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${(bh*0.0072).toFixed(2)}" fill="${c}" stroke="var(--pin-stroke)" stroke-width="${(bh*0.0026).toFixed(2)}"/>`;
 
-    // 대표 사진
-    g += `<rect x="${s.cx.toFixed(1)}" y="${s.cy.toFixed(1)}" width="${CW.toFixed(1)}" height="${CW.toFixed(1)}"
-            rx="${(CW*0.06).toFixed(1)}" fill="url(#${gid})"/>`;
-    g += `<rect x="${s.cx.toFixed(1)}" y="${(s.cy+CW-CW*0.13).toFixed(1)}" width="${(CW*0.13).toFixed(1)}" height="${(CW*0.13).toFixed(1)}" fill="${c}"/>`;
+    // 대표 사진 — 드라이브 썸네일이 있으면 그걸, 없으면 색 타일
+    const X = s.cx.toFixed(1), Y = s.cy.toFixed(1), S = CW.toFixed(1), RX = (CW*0.06).toFixed(1);
+    const shot = heroShot(PLACES[s.src]);
+    if (shot && shot.id){
+      clips += `<clipPath id="${cid}"><rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="${RX}"/></clipPath>`;
+      g += `<image href="${photoUrl(shot.id, 900)}" x="${X}" y="${Y}" width="${S}" height="${S}"
+              preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>`;
+    } else {
+      const [h1,h2] = hue(s.src*7 + (PLACES[s.src].hero||0));
+      grads += `<linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="hsl(${h1} 34% 62%)"/><stop offset="1" stop-color="hsl(${h2} 30% 41%)"/></linearGradient>`;
+      g += `<rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="${RX}" fill="url(#${gid})"/>`;
+    }
+    g += `<rect x="${X}" y="${(s.cy+CW-CW*0.13).toFixed(1)}" width="${(CW*0.13).toFixed(1)}" height="${(CW*0.13).toFixed(1)}" fill="${c}"/>`;
 
     // 이름 · 날짜
     const tx = (s.cx + CW/2).toFixed(1);
     g += `<text class="lbl" x="${tx}" y="${(s.cy+CW+FS*1.35).toFixed(1)}" font-size="${FS.toFixed(1)}" text-anchor="middle">${s.n}</text>`;
-    g += `<text class="lbl-sub" x="${tx}" y="${(s.cy+CW+FS*2.55).toFixed(1)}" font-size="${(FS*0.8).toFixed(1)}" text-anchor="middle">${[...s.days].map(d=>'9/'+d).join(' · ')}</text>`;
+    g += `<text class="lbl-sub" x="${tx}" y="${(s.cy+CW+FS*2.55).toFixed(1)}" font-size="${(FS*0.8).toFixed(1)}" text-anchor="middle">${[...s.days].join(' · ')}</text>`;
   });
 
   const vx = side==='L' ? bx - M : bx;
@@ -253,22 +314,32 @@ function drawPanel(R, side, baseEl, overEl){
   baseEl.setAttribute('viewBox', pvb); overEl.setAttribute('viewBox', pvb);
   if (baseEl.dataset.g !== R.key){ baseEl.innerHTML = terrainOf(R); baseEl.dataset.g = R.key; }
   const psc = Math.max(0.6, bw/430);
-  overEl.innerHTML = `<defs>${grads}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}`;
+  overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}`;
+  overEl.parentElement.classList.toggle('nospot', !spots.length);
   return spots;
 }
 
 function drawPoster(){
-  const a = drawPanel(REGIONS.sapporo, 'L',
-    document.getElementById('pbase-s'), document.getElementById('pover-s'));
-  const b = drawPanel(REGIONS.biei, 'R',
-    document.getElementById('pbase-b'), document.getElementById('pover-b'));
+  const spots = PANELS.flatMap(pn => drawPanel(
+    REGIONS[pn.key], pn.side,
+    document.getElementById(pn.base), document.getElementById(pn.over), pn.max));
 
-  const used = new Set([...a,...b].map(s => s.k));
+  const used = new Set(spots.map(s => s.k));
   let leg = Object.entries(CAT).filter(([k]) => used.has(k))
     .map(([,v]) => `<div><i style="background:var(${v.c})"></i><b>${v.n}</b></div>`).join('');
   leg += ['밀','라벤더','감자'].map((n,i) =>
     `<div><i class="sq" style="background:var(--${['wheat','lav','potato'][i]})"></i><b>${n}밭</b></div>`).join('');
   document.getElementById('plegend').innerHTML = leg;
+}
+
+/* 포스터 패널 머리글의 날짜 — 실제로 사진이 있는 날로 채운다 */
+function stampPosterDays(){
+  PANELS.forEach(pn => {
+    const el = document.querySelector(`#${pn.over}`).closest('.p-panel').querySelector('.cap span');
+    if (!el) return;
+    const days = [...new Set(placesOf(pn.key).map(p => p.p.d))].sort(dayCmp);
+    el.textContent = days.length ? days.join(' · ') : '';
+  });
 }
 
 /* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════ */
@@ -286,18 +357,19 @@ function buildExpand(){
       const shown = Math.min(p.ph, 6);
       let ph = '';
       for (let k=0;k<shown;k++)
-        ph += `<div class="ph${k===p.hero?' hero':''}">${thumb(i*7+k)}</div>`;
+        ph += `<div class="ph${k===p.hero?' hero':''}">${shotImg(p,k,i*7+k,320)}</div>`;
       if (p.ph > shown) ph += `<div class="count">+${p.ph-shown}</div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
-            <div><h3>${p.n}</h3><div class="jp">${p.j}</div></div>
+            <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${p.j}</div>` : ''}</div>
             <span class="rg">${REGIONS[p.g].name}</span></div>
           ${p.ph ? `<div class="exphotos">${ph}</div>` : ''}
         </article>`;
     });
     html += `</section>`;
   });
-  document.getElementById('exbody').innerHTML = html;
+  document.getElementById('exbody').innerHTML =
+    html || `<p class="ex-empty">아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p>`;
 }
 
 /* ══════════ 탭 ══════════ */
@@ -324,10 +396,10 @@ function posterRefresh(){
   if (TABS.print[1].classList.contains('on')) drawPoster();
 }
 
-/* ── 주소로 바로 열기 — #biei · #print · #expand ── */
+/* ── 주소로 바로 열기 — #otaru · #biei · #print · #expand ── */
 function applyHash(){
   const h = (location.hash || '').replace('#','');
-  if (h === 'biei' || h === 'sapporo') setRegion(h);
+  if (REGIONS[h]) setRegion(h);
   else if (h === 'print' || h === 'expand') tab(h);
 }
 addEventListener('hashchange', applyHash);
@@ -339,7 +411,12 @@ addEventListener('resize', () => {
   rt = setTimeout(() => { if (TABS.print[1].classList.contains('on')) drawPoster(); }, 160);
 });
 
-drawScreen();
-buildExpand();
-openPin(1);
-applyHash();
+/* 데이터가 채워지거나 바뀌면 화면 전체를 다시 만든다 */
+function refreshAll(){
+  buildDays();
+  markRegionCounts();
+  stampPosterDays();
+  drawScreen();
+  buildExpand();
+  posterRefresh();
+}
