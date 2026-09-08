@@ -206,7 +206,7 @@ const REGIONS = {
 };
 
 /* 화면 왼쪽 위 전환 버튼과 포스터 패널 순서 */
-const REGION_ORDER = ['sapporo','otaru','biei'];
+const REGION_ORDER = ['sapporo','biei','otaru'];
 
 /* ── 투영 · 화면 맞추기 ── */
 function projector(map){

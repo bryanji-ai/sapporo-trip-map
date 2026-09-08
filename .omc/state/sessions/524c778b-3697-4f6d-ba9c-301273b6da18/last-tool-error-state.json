@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls /Applications/ 2>/dev/null | grep -i \\\"chrome\\\\|chromium\\\" ; which chromium 2>/dev/null; node -e \\\"require.resolve('playwright')\\\" 2>/dev/null && echo pw\",\"description\":\"Check for headl...",
+  "error": "Exit code 1\nGoogle Chrome.app\nchromium not found",
+  "timestamp": "2026-09-08T15:12:23.904Z",
+  "retry_count": 1
+}

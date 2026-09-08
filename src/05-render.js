@@ -214,11 +214,13 @@ sheet.addEventListener('click', e => {
 })();
 
 /* ══════════ 인쇄 포스터 — 삿포로 + 오타루 + 비에이 한 장 ══════════
-   삿포로는 왼쪽에 크게(2/3), 오타루·비에이는 오른쪽에 위아래로(1/3). */
+   홋카이도 실제 지형 배치(배치 자체는 .p-body 격자가 잡는다):
+   삿포로는 왼쪽 열 전체에 크게, 오타루는 북서쪽이라 우상단, 비에이는 북동 내륙이라 우하단.
+   max 는 그 패널에 세울 사진 카드 정원 — 패널이 높을수록 여유가 있다. */
 const PANELS = [
   {key:'sapporo', side:'L', max:7, base:'pbase-s', over:'pover-s'},
-  {key:'otaru',   side:'R', max:4, base:'pbase-o', over:'pover-o'},
-  {key:'biei',    side:'R', max:4, base:'pbase-b', over:'pover-b'}
+  {key:'otaru',   side:'R', max:3, base:'pbase-o', over:'pover-o'},
+  {key:'biei',    side:'R', max:5, base:'pbase-b', over:'pover-b'}
 ];
 
 /* 같은 장소를 여러 번 갔으면 하나로 합친다 (사진이 가장 많은 방문을 대표로) */

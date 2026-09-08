@@ -234,14 +234,22 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border-bottom:1.5px solid var(--ink);padding-bottom:1.5cqw}
 .p-head h2{font-size:3.6cqw;letter-spacing:-.02em;line-height:1}
 .p-head .sub{font-family:"IBM Plex Mono",monospace;font-size:1.12cqw;color:var(--ink-2);letter-spacing:.1em;text-align:right;line-height:1.7}
-/* 삿포로를 왼쪽 2/3 에 크게, 오타루·비에이를 오른쪽 1/3 에 위아래로 */
-.p-body{display:grid;grid-template-columns:2fr 1fr;gap:1.6cqw;margin:1.7cqw 0 0;min-height:0}
-.p-side{display:grid;grid-template-rows:1fr 1fr;gap:1.5cqw;min-height:0}
+/* 홋카이도 실제 지리대로 배치한다 — 2열 × 2행.
+   왼쪽 열 전체가 삿포로(가장 크게), 오른쪽 열은 위가 오타루(삿포로 북서),
+   아래가 비에이(북동 내륙). 열 비율 3:2 = 좌 60% / 우 40% —
+   오른쪽 두 패널은 각각 우측 40%의 절반 높이라 한 장에서 차지하는 몫이 약 20%씩이다. */
+.p-body{
+  display:grid;grid-template-columns:3fr 2fr;grid-template-rows:1fr 1fr;
+  gap:1.2cqw;margin:1.7cqw 0 0;min-height:0;
+}
 .p-panel{position:relative;min-height:0;display:flex;flex-direction:column}
-/* 작은 오른쪽 패널은 머리글도 한 단계 작게 */
-.p-side .p-panel .cap{font-size:1.22cqw}
-.p-side .p-panel .cap em{font-size:.88cqw}
-.p-side .p-panel .cap span{font-size:.82cqw}
+.p-panel.pn-sapporo{grid-column:1;grid-row:1 / 3}   /* 왼쪽 열 전체 — 가장 크게 */
+.p-panel.pn-otaru  {grid-column:2;grid-row:1}       /* 오른쪽 상단 — 삿포로 북서 */
+.p-panel.pn-biei   {grid-column:2;grid-row:2}       /* 오른쪽 하단 — 북동 내륙 */
+/* 작은 오른쪽 두 패널은 머리글도 한 단계 작게 */
+.p-panel.sm .cap{font-size:1.22cqw}
+.p-panel.sm .cap em{font-size:.88cqw}
+.p-panel.sm .cap span{font-size:.82cqw}
 /* 그 지역 사진이 아직 없을 때 — 지형만 깔린 패널임을 알려준다 */
 .p-map.nospot::after{
   content:"사진이 아직 없어요";position:absolute;inset:auto 0 44% 0;text-align:center;

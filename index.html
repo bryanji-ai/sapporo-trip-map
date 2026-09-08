@@ -251,14 +251,22 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border-bottom:1.5px solid var(--ink);padding-bottom:1.5cqw}
 .p-head h2{font-size:3.6cqw;letter-spacing:-.02em;line-height:1}
 .p-head .sub{font-family:"IBM Plex Mono",monospace;font-size:1.12cqw;color:var(--ink-2);letter-spacing:.1em;text-align:right;line-height:1.7}
-/* 삿포로를 왼쪽 2/3 에 크게, 오타루·비에이를 오른쪽 1/3 에 위아래로 */
-.p-body{display:grid;grid-template-columns:2fr 1fr;gap:1.6cqw;margin:1.7cqw 0 0;min-height:0}
-.p-side{display:grid;grid-template-rows:1fr 1fr;gap:1.5cqw;min-height:0}
+/* 홋카이도 실제 지리대로 배치한다 — 2열 × 2행.
+   왼쪽 열 전체가 삿포로(가장 크게), 오른쪽 열은 위가 오타루(삿포로 북서),
+   아래가 비에이(북동 내륙). 열 비율 3:2 = 좌 60% / 우 40% —
+   오른쪽 두 패널은 각각 우측 40%의 절반 높이라 한 장에서 차지하는 몫이 약 20%씩이다. */
+.p-body{
+  display:grid;grid-template-columns:3fr 2fr;grid-template-rows:1fr 1fr;
+  gap:1.2cqw;margin:1.7cqw 0 0;min-height:0;
+}
 .p-panel{position:relative;min-height:0;display:flex;flex-direction:column}
-/* 작은 오른쪽 패널은 머리글도 한 단계 작게 */
-.p-side .p-panel .cap{font-size:1.22cqw}
-.p-side .p-panel .cap em{font-size:.88cqw}
-.p-side .p-panel .cap span{font-size:.82cqw}
+.p-panel.pn-sapporo{grid-column:1;grid-row:1 / 3}   /* 왼쪽 열 전체 — 가장 크게 */
+.p-panel.pn-otaru  {grid-column:2;grid-row:1}       /* 오른쪽 상단 — 삿포로 북서 */
+.p-panel.pn-biei   {grid-column:2;grid-row:2}       /* 오른쪽 하단 — 북동 내륙 */
+/* 작은 오른쪽 두 패널은 머리글도 한 단계 작게 */
+.p-panel.sm .cap{font-size:1.22cqw}
+.p-panel.sm .cap em{font-size:.88cqw}
+.p-panel.sm .cap span{font-size:.82cqw}
 /* 그 지역 사진이 아직 없을 때 — 지형만 깔린 패널임을 알려준다 */
 .p-map.nospot::after{
   content:"사진이 아직 없어요";position:absolute;inset:auto 0 44% 0;text-align:center;
@@ -411,7 +419,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
       <em>삿포로 · 오타루 · 비에이를 한 장에 담은 포스터가 나옵니다. 액자에 넣을 수 있게요.</em></div>
   </div>
 
-  <p class="ask">지도 왼쪽 위의 <b>삿포로 · 오타루 · 비에이</b>를 눌러 세 지역을 오가고,
+  <p class="ask">지도 왼쪽 위의 <b>삿포로 · 비에이 · 오타루</b>를 눌러 세 지역을 오가고,
      위쪽 <b>지도 · 펼쳐보기 · 인쇄</b> 세 개도 눌러봐요.
      색이나 배치 중에 마음에 안 드는 게 있으면 알려줘요.</p>
 </section>
@@ -426,8 +434,8 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
     <svg id="mapbase" aria-hidden="true"></svg><svg id="mapover" role="img" aria-label="여행 지도"></svg><svg id="mapillust" aria-hidden="true"></svg>
     <div class="regionsw" role="group" aria-label="지역 전환">
       <button data-g="sapporo" aria-pressed="true">삿포로<em class="rc"></em></button>
-      <button data-g="otaru" aria-pressed="false">오타루<em class="rc"></em></button>
       <button data-g="biei" aria-pressed="false">비에이<em class="rc"></em></button>
+      <button data-g="otaru" aria-pressed="false">오타루<em class="rc"></em></button>
     </div>
     <div class="scalebar"><i style="--w:74px"></i><span>500 m</span></div>
     <div class="mapstate" id="mapstate" role="status" hidden></div>
@@ -447,20 +455,19 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
       <h2>후니＆어니의 홋카이도 여행</h2>
       <div class="sub">2026.09.11 — 09.14<br>HOKKAIDO</div>
     </div>
+    <!-- 홋카이도 실제 지형대로 — 삿포로 왼쪽 전체, 오타루 북서(우상단), 비에이 북동 내륙(우하단) -->
     <div class="p-body">
-      <div class="p-panel big">
+      <div class="p-panel big pn-sapporo">
         <div class="cap">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
-      <div class="p-side">
-        <div class="p-panel">
-          <div class="cap">오타루 <em>小樽</em><span></span></div>
-          <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
-        </div>
-        <div class="p-panel">
-          <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
-          <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
-        </div>
+      <div class="p-panel sm pn-otaru">
+        <div class="cap">오타루 <em>小樽</em><span></span></div>
+        <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
+      </div>
+      <div class="p-panel sm pn-biei">
+        <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
+        <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
       </div>
     </div>
     <div class="p-foot">
@@ -693,7 +700,7 @@ const REGIONS = {
 };
 
 /* 화면 왼쪽 위 전환 버튼과 포스터 패널 순서 */
-const REGION_ORDER = ['sapporo','otaru','biei'];
+const REGION_ORDER = ['sapporo','biei','otaru'];
 
 /* ── 투영 · 화면 맞추기 ── */
 function projector(map){
@@ -1876,11 +1883,13 @@ sheet.addEventListener('click', e => {
 })();
 
 /* ══════════ 인쇄 포스터 — 삿포로 + 오타루 + 비에이 한 장 ══════════
-   삿포로는 왼쪽에 크게(2/3), 오타루·비에이는 오른쪽에 위아래로(1/3). */
+   홋카이도 실제 지형 배치(배치 자체는 .p-body 격자가 잡는다):
+   삿포로는 왼쪽 열 전체에 크게, 오타루는 북서쪽이라 우상단, 비에이는 북동 내륙이라 우하단.
+   max 는 그 패널에 세울 사진 카드 정원 — 패널이 높을수록 여유가 있다. */
 const PANELS = [
   {key:'sapporo', side:'L', max:7, base:'pbase-s', over:'pover-s'},
-  {key:'otaru',   side:'R', max:4, base:'pbase-o', over:'pover-o'},
-  {key:'biei',    side:'R', max:4, base:'pbase-b', over:'pover-b'}
+  {key:'otaru',   side:'R', max:3, base:'pbase-o', over:'pover-o'},
+  {key:'biei',    side:'R', max:5, base:'pbase-b', over:'pover-b'}
 ];
 
 /* 같은 장소를 여러 번 갔으면 하나로 합친다 (사진이 가장 많은 방문을 대표로) */

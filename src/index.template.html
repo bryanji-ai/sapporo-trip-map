@@ -50,7 +50,7 @@ img{max-width:100%}
       <em>삿포로 · 오타루 · 비에이를 한 장에 담은 포스터가 나옵니다. 액자에 넣을 수 있게요.</em></div>
   </div>
 
-  <p class="ask">지도 왼쪽 위의 <b>삿포로 · 오타루 · 비에이</b>를 눌러 세 지역을 오가고,
+  <p class="ask">지도 왼쪽 위의 <b>삿포로 · 비에이 · 오타루</b>를 눌러 세 지역을 오가고,
      위쪽 <b>지도 · 펼쳐보기 · 인쇄</b> 세 개도 눌러봐요.
      색이나 배치 중에 마음에 안 드는 게 있으면 알려줘요.</p>
 </section>
@@ -65,8 +65,8 @@ img{max-width:100%}
     <svg id="mapbase" aria-hidden="true"></svg><svg id="mapover" role="img" aria-label="여행 지도"></svg><svg id="mapillust" aria-hidden="true"></svg>
     <div class="regionsw" role="group" aria-label="지역 전환">
       <button data-g="sapporo" aria-pressed="true">삿포로<em class="rc"></em></button>
-      <button data-g="otaru" aria-pressed="false">오타루<em class="rc"></em></button>
       <button data-g="biei" aria-pressed="false">비에이<em class="rc"></em></button>
+      <button data-g="otaru" aria-pressed="false">오타루<em class="rc"></em></button>
     </div>
     <div class="scalebar"><i style="--w:74px"></i><span>500 m</span></div>
     <div class="mapstate" id="mapstate" role="status" hidden></div>
@@ -86,20 +86,19 @@ img{max-width:100%}
       <h2>후니＆어니의 홋카이도 여행</h2>
       <div class="sub">2026.09.11 — 09.14<br>HOKKAIDO</div>
     </div>
+    <!-- 홋카이도 실제 지형대로 — 삿포로 왼쪽 전체, 오타루 북서(우상단), 비에이 북동 내륙(우하단) -->
     <div class="p-body">
-      <div class="p-panel big">
+      <div class="p-panel big pn-sapporo">
         <div class="cap">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
-      <div class="p-side">
-        <div class="p-panel">
-          <div class="cap">오타루 <em>小樽</em><span></span></div>
-          <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
-        </div>
-        <div class="p-panel">
-          <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
-          <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
-        </div>
+      <div class="p-panel sm pn-otaru">
+        <div class="cap">오타루 <em>小樽</em><span></span></div>
+        <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
+      </div>
+      <div class="p-panel sm pn-biei">
+        <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
+        <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
       </div>
     </div>
     <div class="p-foot">
