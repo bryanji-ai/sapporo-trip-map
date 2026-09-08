@@ -78,27 +78,27 @@
       "type": "file"
     },
     {
+      "path": "src/01-data.js",
+      "accessCount": 2,
+      "lastAccessed": 1788885534641,
+      "type": "file"
+    },
+    {
+      "path": "src/05-render.js",
+      "accessCount": 2,
+      "lastAccessed": 1788885540773,
+      "type": "file"
+    },
+    {
       "path": "tools/fetch_osm.py",
       "accessCount": 1,
       "lastAccessed": 1788878526150,
       "type": "file"
     },
     {
-      "path": "src/01-data.js",
-      "accessCount": 1,
-      "lastAccessed": 1788878784667,
-      "type": "file"
-    },
-    {
       "path": "src/04-illust.js",
       "accessCount": 1,
       "lastAccessed": 1788878910639,
-      "type": "file"
-    },
-    {
-      "path": "src/05-render.js",
-      "accessCount": 1,
-      "lastAccessed": 1788879041339,
       "type": "file"
     },
     {

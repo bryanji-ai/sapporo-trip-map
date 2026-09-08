@@ -5,6 +5,15 @@ document.getElementById('sharedefs').innerHTML = defs('bm');
    드라이브 파일 id 가 있으면 실제 썸네일, 없으면 색 타일로 자리만 잡는다. */
 const photoUrl = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
 
+/* 사진 한 장의 주소 — 드라이브 파일 id 가 원칙이고,
+   샘플 사진(01-data.js sampleShots)은 src 를 직접 들고 온다.
+   src 안의 {w} 는 여기서 요청 폭으로 바뀐다. */
+function shotUrl(s, w){
+  if (!s) return '';
+  if (s.src) return String(s.src).replace(/\{w\}/g, w);
+  return s.id ? photoUrl(s.id, w) : '';
+}
+
 function heroShot(p){
   if (!p.shots || !p.shots.length) return null;
   return p.shots[p.hero] || p.shots[0];
@@ -15,9 +24,9 @@ function tile(seed){
 }
 /* 시트·펼쳐보기에 들어갈 사진 한 장 */
 function shotImg(p, k, seed, w){
-  const s = p.shots && p.shots[k];
-  return s && s.id
-    ? `<img class="im" loading="lazy" decoding="async" src="${photoUrl(s.id, w)}" alt="">`
+  const u = shotUrl(p.shots && p.shots[k], w);
+  return u
+    ? `<img class="im" loading="lazy" decoding="async" src="${u}" alt="">`
     : tile(seed);
 }
 function hue(seed){ return [(seed*47)%360, (seed*47+38)%360]; }
@@ -79,7 +88,7 @@ function closeLightbox(){
 /* 한 장소의 사진 목록 — 원본 shots 순번(k)을 같이 들고 다녀야 시트에서 누른 장을 찾을 수 있다 */
 function lbShots(p){
   return (p.shots || [])
-    .map((s,k) => ({k, url: s && s.id ? photoUrl(s.id, 1600) : ''}))
+    .map((s,k) => ({k, url: shotUrl(s, 1600)}))
     .filter(o => o.url);
 }
 /* i 번째 장소의 사진을 연다 — k 를 주면 그 장부터, 없으면 대표 사진부터 */
@@ -388,10 +397,10 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
 
     // 대표 사진 — 드라이브 썸네일이 있으면 그걸, 없으면 색 타일
     const X = s.cx.toFixed(1), Y = s.cy.toFixed(1), S = CW.toFixed(1), RX = (CW*0.06).toFixed(1);
-    const shot = heroShot(PLACES[s.src]);
-    if (shot && shot.id){
+    const shot = heroShot(PLACES[s.src]), shotHref = shotUrl(shot, 900);
+    if (shotHref){
       clips += `<clipPath id="${cid}"><rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="${RX}"/></clipPath>`;
-      g += `<image class="p-shot" data-pi="${s.src}" href="${photoUrl(shot.id, 900)}" x="${X}" y="${Y}" width="${S}" height="${S}"
+      g += `<image class="p-shot" data-pi="${s.src}" href="${shotHref}" x="${X}" y="${Y}" width="${S}" height="${S}"
               preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>`;
     } else {
       const [h1,h2] = hue(s.src*7 + (PLACES[s.src].hero||0));

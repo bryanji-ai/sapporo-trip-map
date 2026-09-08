@@ -577,45 +577,87 @@ let PLACES = [];
    「펼쳐보기」는 실데이터가 올 때까지 비워둔다 — 05-render.js buildExpand(). */
 let isLive = false;
 
+/* ── 샘플 사진 ──
+   Picsum(무료 공개 이미지)은 같은 seed 에 늘 같은 사진을 돌려준다 —
+   새로고침해도 장소마다 사진이 바뀌지 않는다.
+   src 의 {w} 는 쓰는 쪽에서 필요한 폭으로 바뀐다 (썸네일 320~400 · 라이트박스 1600)
+   — 05-render.js shotUrl(). */
+const sampleShots = (...seeds) => seeds.map((s,i) => ({
+  id: `sample-${s}`,
+  src: `https://picsum.photos/seed/${s}/{w}/{w}`,
+  hero: i === 0
+}));
+
 /* ── 샘플 일정 — 드라이브에서 받은 사진이 하나도 없을 때만 쓴다 ──
    좌표는 실제, 시간 · 사진 수 · 금액은 지도가 어떻게 보이는지 미리
-   확인하기 위한 가짜 값이다. 사진이 한 장이라도 올라오면 전부 밀린다. */
+   확인하기 위한 가짜 값이다. 사진이 한 장이라도 올라오면 전부 밀린다.
+   _sample:1 은 실데이터로 바뀔 때 샘플 사진을 버리는 표식이다 — 06-load.js. */
 const SAMPLE_PLACES = [
   /* ── 삿포로 ── */
-  {g:'sapporo',d:'9/11',k:'stay',t:'16:40',n:'숙소 체크인',       j:'ホテル',                  lat:43.0645,lon:141.3520,ph:3, pay:[['숙소 잔금','¥0']]},
-  {g:'sapporo',d:'9/11',k:'food',t:'17:05',n:'후쿠스케',          j:'北海道産羊・野菜ふくすけ',  lat:43.0546,lon:141.3520,ph:14,pay:[['양고기 코스 2인','¥9,800'],['생맥주 3','¥1,800']]},
-  {g:'sapporo',d:'9/11',k:'food',t:'20:14',n:'라멘 요코초',       j:'元祖さっぽろラーメン横丁',  lat:43.0553,lon:141.3536,ph:9, pay:[['미소라멘 2','¥2,400'],['삿포로 클래식','¥800']]},
-  {g:'sapporo',d:'9/11',k:'food',t:'21:30',n:'돈키호테 타누키코지',j:'ドン・キホーテ 狸小路',    lat:43.0570,lon:141.3500,ph:5, pay:[['간식·상비약','¥4,320']]},
-  {g:'sapporo',d:'9/12',k:'move',t:'07:28',n:'삿포로역',          j:'札幌駅',                  lat:43.0686,lon:141.3508,ph:6, pay:[['편의점 커피 2','¥360']]},
-  {g:'sapporo',d:'9/12',k:'food',t:'07:40',n:'세이코마트',        j:'セイコーマート',           lat:43.0670,lon:141.3490,ph:2, pay:[['도시락 2·음료','¥1,180']]},
-  {g:'sapporo',d:'9/12',k:'food',t:'21:05',n:'스스키노 바',       j:'ザ・バー ナノ・フェムト',   lat:43.0555,lon:141.3560,ph:11,pay:[['위스키 2잔','¥3,600']]},
-  {g:'sapporo',d:'9/13',k:'tour',t:'09:12',n:'포플러 가로수길',   j:'北海道大学 ポプラ並木',     lat:43.0760,lon:141.3395,ph:23,pay:[]},
-  {g:'sapporo',d:'9/13',k:'tour',t:'10:05',n:'은행나무길',        j:'北海道大学 イチョウ並木',   lat:43.0730,lon:141.3430,ph:18,pay:[]},
-  {g:'sapporo',d:'9/13',k:'move',t:'19:20',n:'니조시장',          j:'二条市場',                lat:43.0575,lon:141.3563,ph:12,pay:[['성게덮밥·게','¥7,400']]},
-  {g:'sapporo',d:'9/14',k:'tour',t:'09:40',n:'오도리공원',        j:'大通公園',                lat:43.0595,lon:141.3510,ph:16,pay:[['옥수수 2','¥600']]},
-  {g:'sapporo',d:'9/14',k:'food',t:'10:35',n:'롯카테이 본점',     j:'六花亭 札幌本店',          lat:43.0620,lon:141.3548,ph:8, pay:[['마루세이 버터샌드 외','¥6,840']]},
-  {g:'sapporo',d:'9/14',k:'move',t:'12:10',n:'삿포로역',          j:'札幌駅',                  lat:43.0686,lon:141.3508,ph:12,pay:[['공항 특급 2매','¥2,600']]},
+  {g:'sapporo',d:'9/11',k:'stay',t:'16:40',n:'숙소 체크인',       j:'ホテル',                  lat:43.0645,lon:141.3520,ph:3, pay:[['숙소 잔금','¥0']], _sample:1,
+   photos:sampleShots('sap1','sap2','sap3')},
+  {g:'sapporo',d:'9/11',k:'food',t:'17:05',n:'후쿠스케',          j:'北海道産羊・野菜ふくすけ',  lat:43.0546,lon:141.3520,ph:14,pay:[['양고기 코스 2인','¥9,800'],['생맥주 3','¥1,800']], _sample:1,
+   photos:sampleShots('sap4','sap5','sap6')},
+  {g:'sapporo',d:'9/11',k:'food',t:'20:14',n:'라멘 요코초',       j:'元祖さっぽろラーメン横丁',  lat:43.0553,lon:141.3536,ph:9, pay:[['미소라멘 2','¥2,400'],['삿포로 클래식','¥800']], _sample:1,
+   photos:sampleShots('sap7','sap8','sap9')},
+  {g:'sapporo',d:'9/11',k:'food',t:'21:30',n:'돈키호테 타누키코지',j:'ドン・キホーテ 狸小路',    lat:43.0570,lon:141.3500,ph:5, pay:[['간식·상비약','¥4,320']], _sample:1,
+   photos:sampleShots('sap10','sap11')},
+  {g:'sapporo',d:'9/12',k:'move',t:'07:28',n:'삿포로역',          j:'札幌駅',                  lat:43.0686,lon:141.3508,ph:6, pay:[['편의점 커피 2','¥360']], _sample:1,
+   photos:sampleShots('sap12','sap13','sap14')},
+  {g:'sapporo',d:'9/12',k:'food',t:'07:40',n:'세이코마트',        j:'セイコーマート',           lat:43.0670,lon:141.3490,ph:2, pay:[['도시락 2·음료','¥1,180']], _sample:1,
+   photos:sampleShots('sap15','sap16')},
+  {g:'sapporo',d:'9/12',k:'food',t:'21:05',n:'스스키노 바',       j:'ザ・バー ナノ・フェムト',   lat:43.0555,lon:141.3560,ph:11,pay:[['위스키 2잔','¥3,600']], _sample:1,
+   photos:sampleShots('sap17','sap18','sap19')},
+  {g:'sapporo',d:'9/13',k:'tour',t:'09:12',n:'포플러 가로수길',   j:'北海道大学 ポプラ並木',     lat:43.0760,lon:141.3395,ph:23,pay:[], _sample:1,
+   photos:sampleShots('sap20','sap21','sap22')},
+  {g:'sapporo',d:'9/13',k:'tour',t:'10:05',n:'은행나무길',        j:'北海道大学 イチョウ並木',   lat:43.0730,lon:141.3430,ph:18,pay:[], _sample:1,
+   photos:sampleShots('sap23','sap24','sap25')},
+  {g:'sapporo',d:'9/13',k:'move',t:'19:20',n:'니조시장',          j:'二条市場',                lat:43.0575,lon:141.3563,ph:12,pay:[['성게덮밥·게','¥7,400']], _sample:1,
+   photos:sampleShots('sap26','sap27','sap28')},
+  {g:'sapporo',d:'9/14',k:'tour',t:'09:40',n:'오도리공원',        j:'大通公園',                lat:43.0595,lon:141.3510,ph:16,pay:[['옥수수 2','¥600']], _sample:1,
+   photos:sampleShots('sap29','sap30','sap31')},
+  {g:'sapporo',d:'9/14',k:'food',t:'10:35',n:'롯카테이 본점',     j:'六花亭 札幌本店',          lat:43.0620,lon:141.3548,ph:8, pay:[['마루세이 버터샌드 외','¥6,840']], _sample:1,
+   photos:sampleShots('sap32','sap33')},
+  {g:'sapporo',d:'9/14',k:'move',t:'12:10',n:'삿포로역',          j:'札幌駅',                  lat:43.0686,lon:141.3508,ph:12,pay:[['공항 특급 2매','¥2,600']], _sample:1,
+   photos:sampleShots('sap34','sap35','sap36')},
 
   /* ── 비에이 · 후라노 (9/12 하루) ── */
-  {g:'biei',d:'9/12',k:'move',t:'09:35',n:'비에이역',            j:'美瑛駅',                  lat:43.5883,lon:142.4675,ph:5, pay:[['렌터카 인수','¥8,800']]},
-  {g:'biei',d:'9/12',k:'tour',t:'10:00',n:'제루부의 언덕',       j:'ぜるぶの丘',              lat:43.6070,lon:142.4570,ph:9, pay:[['입장·트랙터버스','¥1,000']]},
-  {g:'biei',d:'9/12',k:'tour',t:'10:35',n:'켄과 메리의 나무',    j:'ケンとメリーの木',         lat:43.6197,lon:142.4463,ph:7, pay:[]},
-  {g:'biei',d:'9/12',k:'tour',t:'11:00',n:'패치워크 로드',       j:'パッチワークの路',         lat:43.6120,lon:142.4380,ph:12,pay:[]},
-  {g:'biei',d:'9/12',k:'tour',t:'11:40',n:'크리스마스 나무',     j:'クリスマスツリーの木',      lat:43.5478,lon:142.4356,ph:6, pay:[]},
-  {g:'biei',d:'9/12',k:'tour',t:'12:05',n:'세븐스타 나무',       j:'セブンスターの木',         lat:43.5417,lon:142.4744,ph:8, pay:[]},
-  {g:'biei',d:'9/12',k:'food',t:'12:40',n:'준페이',              j:'洋食とcafe じゅんぺい',    lat:43.5893,lon:142.4640,ph:6, pay:[['새우튀김덮밥 2','¥3,300']]},
-  {g:'biei',d:'9/12',k:'tour',t:'14:00',n:'사계채의 언덕',       j:'四季彩の丘',              lat:43.5546,lon:142.4638,ph:21,pay:[['입장료 2','¥1,000'],['알파카 목장','¥1,000']]},
-  {g:'biei',d:'9/12',k:'tour',t:'15:20',n:'청의 호수',           j:'白金 青い池',             lat:43.5169,lon:142.6236,ph:17,pay:[['주차료','¥500']]},
-  {g:'biei',d:'9/12',k:'tour',t:'16:00',n:'흰수염폭포',          j:'白ひげの滝',              lat:43.4914,lon:142.6414,ph:10,pay:[]},
-  {g:'biei',d:'9/12',k:'tour',t:'17:10',n:'팜 도미타',           j:'ファーム富田',            lat:43.4185,lon:142.4744,ph:15,pay:[['라벤더 소프트 2','¥900'],['기념품','¥3,600']]},
-  {g:'biei',d:'9/12',k:'food',t:'18:05',n:'세이코마트 비에이',   j:'セイコーマート 美瑛店',     lat:43.5905,lon:142.4700,ph:2, pay:[['음료·간식','¥980']]},
+  {g:'biei',d:'9/12',k:'move',t:'09:35',n:'비에이역',            j:'美瑛駅',                  lat:43.5883,lon:142.4675,ph:5, pay:[['렌터카 인수','¥8,800']], _sample:1,
+   photos:sampleShots('bei1','bei2')},
+  {g:'biei',d:'9/12',k:'tour',t:'10:00',n:'제루부의 언덕',       j:'ぜるぶの丘',              lat:43.6070,lon:142.4570,ph:9, pay:[['입장·트랙터버스','¥1,000']], _sample:1,
+   photos:sampleShots('bei3','bei4','bei5')},
+  {g:'biei',d:'9/12',k:'tour',t:'10:35',n:'켄과 메리의 나무',    j:'ケンとメリーの木',         lat:43.6197,lon:142.4463,ph:7, pay:[], _sample:1,
+   photos:sampleShots('bei6','bei7')},
+  {g:'biei',d:'9/12',k:'tour',t:'11:00',n:'패치워크 로드',       j:'パッチワークの路',         lat:43.6120,lon:142.4380,ph:12,pay:[], _sample:1,
+   photos:sampleShots('bei8','bei9','bei10')},
+  {g:'biei',d:'9/12',k:'tour',t:'11:40',n:'크리스마스 나무',     j:'クリスマスツリーの木',      lat:43.5478,lon:142.4356,ph:6, pay:[], _sample:1,
+   photos:sampleShots('bei11','bei12')},
+  {g:'biei',d:'9/12',k:'tour',t:'12:05',n:'세븐스타 나무',       j:'セブンスターの木',         lat:43.5417,lon:142.4744,ph:8, pay:[], _sample:1,
+   photos:sampleShots('bei13','bei14')},
+  {g:'biei',d:'9/12',k:'food',t:'12:40',n:'준페이',              j:'洋食とcafe じゅんぺい',    lat:43.5893,lon:142.4640,ph:6, pay:[['새우튀김덮밥 2','¥3,300']], _sample:1,
+   photos:sampleShots('bei15','bei16')},
+  {g:'biei',d:'9/12',k:'tour',t:'14:00',n:'사계채의 언덕',       j:'四季彩の丘',              lat:43.5546,lon:142.4638,ph:21,pay:[['입장료 2','¥1,000'],['알파카 목장','¥1,000']], _sample:1,
+   photos:sampleShots('bei17','bei18','bei19')},
+  {g:'biei',d:'9/12',k:'tour',t:'15:20',n:'청의 호수',           j:'白金 青い池',             lat:43.5169,lon:142.6236,ph:17,pay:[['주차료','¥500']], _sample:1,
+   photos:sampleShots('bei20','bei21','bei22')},
+  {g:'biei',d:'9/12',k:'tour',t:'16:00',n:'흰수염폭포',          j:'白ひげの滝',              lat:43.4914,lon:142.6414,ph:10,pay:[], _sample:1,
+   photos:sampleShots('bei23','bei24')},
+  {g:'biei',d:'9/12',k:'tour',t:'17:10',n:'팜 도미타',           j:'ファーム富田',            lat:43.4185,lon:142.4744,ph:15,pay:[['라벤더 소프트 2','¥900'],['기념품','¥3,600']], _sample:1,
+   photos:sampleShots('bei25','bei26','bei27')},
+  {g:'biei',d:'9/12',k:'food',t:'18:05',n:'세이코마트 비에이',   j:'セイコーマート 美瑛店',     lat:43.5905,lon:142.4700,ph:2, pay:[['음료·간식','¥980']], _sample:1,
+   photos:sampleShots('bei28','bei29')},
 
   /* ── 오타루 (9/13 오후) ── */
-  {g:'otaru',d:'9/13',k:'move',t:'13:00',n:'오타루역',           j:'小樽駅',                  lat:43.1985,lon:140.9944,ph:2, pay:[['JR','¥800']]},
-  {g:'otaru',d:'9/13',k:'tour',t:'13:30',n:'오타루 운하',        j:'小樽運河',                lat:43.1975,lon:140.9995,ph:6,pay:[]},
-  {g:'otaru',d:'9/13',k:'food',t:'14:20',n:'마스야',             j:'政寿司',                  lat:43.1963,lon:140.9930,ph:3, pay:[['초밥 2인','¥12,000']]},
-  {g:'otaru',d:'9/13',k:'tour',t:'15:10',n:'사카이마치',         j:'堺町通り商店街',           lat:43.1925,lon:140.9958,ph:5,pay:[['기념품','¥5,200']]},
-  {g:'otaru',d:'9/13',k:'tour',t:'16:00',n:'오르골당',           j:'小樽オルゴール堂',         lat:43.1905,lon:140.9972,ph:2, pay:[['오르골','¥3,800']]}
+  {g:'otaru',d:'9/13',k:'move',t:'13:00',n:'오타루역',           j:'小樽駅',                  lat:43.1985,lon:140.9944,ph:2, pay:[['JR','¥800']], _sample:1,
+   photos:sampleShots('ota1','ota2')},
+  {g:'otaru',d:'9/13',k:'tour',t:'13:30',n:'오타루 운하',        j:'小樽運河',                lat:43.1975,lon:140.9995,ph:6,pay:[], _sample:1,
+   photos:sampleShots('ota3','ota4','ota5')},
+  {g:'otaru',d:'9/13',k:'food',t:'14:20',n:'마스야',             j:'政寿司',                  lat:43.1963,lon:140.9930,ph:3, pay:[['초밥 2인','¥12,000']], _sample:1,
+   photos:sampleShots('ota6','ota7','ota8')},
+  {g:'otaru',d:'9/13',k:'tour',t:'15:10',n:'사카이마치',         j:'堺町通り商店街',           lat:43.1925,lon:140.9958,ph:5,pay:[['기념품','¥5,200']], _sample:1,
+   photos:sampleShots('ota9','ota10')},
+  {g:'otaru',d:'9/13',k:'tour',t:'16:00',n:'오르골당',           j:'小樽オルゴール堂',         lat:43.1905,lon:140.9972,ph:2, pay:[['오르골','¥3,800']], _sample:1,
+   photos:sampleShots('ota11','ota12')}
 ];
 
 /* ── 날짜 — 「펼쳐보기」 탭에서만 쓴다. 지도는 필터 없이 전체를 보여준다 ──
@@ -1741,6 +1783,15 @@ document.getElementById('sharedefs').innerHTML = defs('bm');
    드라이브 파일 id 가 있으면 실제 썸네일, 없으면 색 타일로 자리만 잡는다. */
 const photoUrl = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
 
+/* 사진 한 장의 주소 — 드라이브 파일 id 가 원칙이고,
+   샘플 사진(01-data.js sampleShots)은 src 를 직접 들고 온다.
+   src 안의 {w} 는 여기서 요청 폭으로 바뀐다. */
+function shotUrl(s, w){
+  if (!s) return '';
+  if (s.src) return String(s.src).replace(/\{w\}/g, w);
+  return s.id ? photoUrl(s.id, w) : '';
+}
+
 function heroShot(p){
   if (!p.shots || !p.shots.length) return null;
   return p.shots[p.hero] || p.shots[0];
@@ -1751,9 +1802,9 @@ function tile(seed){
 }
 /* 시트·펼쳐보기에 들어갈 사진 한 장 */
 function shotImg(p, k, seed, w){
-  const s = p.shots && p.shots[k];
-  return s && s.id
-    ? `<img class="im" loading="lazy" decoding="async" src="${photoUrl(s.id, w)}" alt="">`
+  const u = shotUrl(p.shots && p.shots[k], w);
+  return u
+    ? `<img class="im" loading="lazy" decoding="async" src="${u}" alt="">`
     : tile(seed);
 }
 function hue(seed){ return [(seed*47)%360, (seed*47+38)%360]; }
@@ -1815,7 +1866,7 @@ function closeLightbox(){
 /* 한 장소의 사진 목록 — 원본 shots 순번(k)을 같이 들고 다녀야 시트에서 누른 장을 찾을 수 있다 */
 function lbShots(p){
   return (p.shots || [])
-    .map((s,k) => ({k, url: s && s.id ? photoUrl(s.id, 1600) : ''}))
+    .map((s,k) => ({k, url: shotUrl(s, 1600)}))
     .filter(o => o.url);
 }
 /* i 번째 장소의 사진을 연다 — k 를 주면 그 장부터, 없으면 대표 사진부터 */
@@ -2124,10 +2175,10 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
 
     // 대표 사진 — 드라이브 썸네일이 있으면 그걸, 없으면 색 타일
     const X = s.cx.toFixed(1), Y = s.cy.toFixed(1), S = CW.toFixed(1), RX = (CW*0.06).toFixed(1);
-    const shot = heroShot(PLACES[s.src]);
-    if (shot && shot.id){
+    const shot = heroShot(PLACES[s.src]), shotHref = shotUrl(shot, 900);
+    if (shotHref){
       clips += `<clipPath id="${cid}"><rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="${RX}"/></clipPath>`;
-      g += `<image class="p-shot" data-pi="${s.src}" href="${photoUrl(shot.id, 900)}" x="${X}" y="${Y}" width="${S}" height="${S}"
+      g += `<image class="p-shot" data-pi="${s.src}" href="${shotHref}" x="${X}" y="${Y}" width="${S}" height="${S}"
               preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>`;
     } else {
       const [h1,h2] = hue(s.src*7 + (PLACES[s.src].hero||0));
@@ -2364,8 +2415,10 @@ function shotsOf(rec, photoMap){
   return raw
     .map(s => typeof s === 'string'
       ? {id:s, hero:false}
-      : {id: str(s, ['id','fileId','file','thumb']), hero: !!(s.hero || s.isHero || s.rep)})
-    .filter(s => s.id);
+      : {id:  str(s, ['id','fileId','file','thumb']),
+         src: str(s, ['src','url']),               // 샘플 사진은 주소를 직접 들고 온다
+         hero: !!(s.hero || s.isHero || s.rep)})
+    .filter(s => s.id || s.src);
 }
 /* 사진 장수 — 목록이 없으면 숫자 필드에서 */
 function countOf(rec, shots){
@@ -2392,8 +2445,11 @@ function payOf(rec){
   return n > 0 ? [['영수증', `${n}건`]] : [];
 }
 
-/* ── 받은 장소를 지도가 쓸 모양으로 ── */
-function adoptPlaces(rows){
+/* ── 받은 장소를 지도가 쓸 모양으로 ──
+   live=true 면 드라이브 실데이터를 얹는 중이다. 이때 _sample 로 표시된
+   장소가 섞여 들어오면 샘플 사진은 통째로 버린다 — 그 자리는 드라이브
+   사진이 채워야 하고, 실물 기록에 남의 사진이 남아 있으면 안 된다. */
+function adoptPlaces(rows, live){
   const p = LOAD.payload;
   const photoMap = (p && !Array.isArray(p) && p.photos && !Array.isArray(p.photos))
                    ? p.photos : null;
@@ -2416,7 +2472,8 @@ function adoptPlaces(rows){
       return;
     }
 
-    const shots = shotsOf(rec, photoMap);
+    const sample = !!rec._sample;
+    const shots = (live && sample) ? [] : shotsOf(rec, photoMap);
     const kRaw = str(rec, ['k','cat','category','kind']);
     const heroAt = shots.findIndex(s => s.hero);
     out.push({
@@ -2426,11 +2483,13 @@ function adoptPlaces(rows){
       n: name,
       j: str(rec, ['j','jp','nameJa','ja']),
       k: CAT[kRaw] ? kRaw : guessCat(name),
-      ph: countOf(rec, shots),
+      // 샘플은 미리 정해둔 장수를 그대로 쓴다 — 샘플 사진 뒤는 색 타일이 채운다
+      ph: sample ? (num(rec, ['ph']) || shots.length) : countOf(rec, shots),
       pay: payOf(rec),
       shots,
       hero: heroAt < 0 ? 0 : heroAt,
-      rid: str(rec, ['id','pid','key','placeId'])
+      rid: str(rec, ['id','pid','key','placeId']),
+      _sample: sample
     });
     stat.kept++;
   });
@@ -2460,9 +2519,9 @@ function saveHero(p){
 async function syncFromDrive(){
   LOAD.error = null; LOAD.payload = null;
   const rows = await loadPlaces();
-  const stat = adoptPlaces(rows);
+  const stat = adoptPlaces(rows, true);
   isLive = !!stat.kept;
-  if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
+  if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
   refreshAll();
   return stat;
 }
@@ -2506,14 +2565,14 @@ async function boot(){
   buildDays(); markRegionCounts(); drawScreen();
 
   const rows = await loadPlaces();
-  const stat = adoptPlaces(rows);
+  const stat = adoptPlaces(rows, true);
   const p = LOAD.payload;
 
   // 드라이브에서 건진 장소가 하나도 없으면 샘플 일정으로 채운다 —
   // 빈 지도보다 "사진을 올리면 이렇게 된다"를 먼저 보여주는 편이 낫다.
   const sample = !stat.kept;
   isLive = !sample;                    // 펼쳐보기는 실데이터일 때만 채운다
-  if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
+  if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
   refreshAll();
 
   // 지도 위에는 안내를 띄우지 않는다 — 상태 표시는 drawScreen() 이 지역별로만 처리하고,

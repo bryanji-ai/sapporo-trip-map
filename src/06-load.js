@@ -85,8 +85,10 @@ function shotsOf(rec, photoMap){
   return raw
     .map(s => typeof s === 'string'
       ? {id:s, hero:false}
-      : {id: str(s, ['id','fileId','file','thumb']), hero: !!(s.hero || s.isHero || s.rep)})
-    .filter(s => s.id);
+      : {id:  str(s, ['id','fileId','file','thumb']),
+         src: str(s, ['src','url']),               // 샘플 사진은 주소를 직접 들고 온다
+         hero: !!(s.hero || s.isHero || s.rep)})
+    .filter(s => s.id || s.src);
 }
 /* 사진 장수 — 목록이 없으면 숫자 필드에서 */
 function countOf(rec, shots){
@@ -113,8 +115,11 @@ function payOf(rec){
   return n > 0 ? [['영수증', `${n}건`]] : [];
 }
 
-/* ── 받은 장소를 지도가 쓸 모양으로 ── */
-function adoptPlaces(rows){
+/* ── 받은 장소를 지도가 쓸 모양으로 ──
+   live=true 면 드라이브 실데이터를 얹는 중이다. 이때 _sample 로 표시된
+   장소가 섞여 들어오면 샘플 사진은 통째로 버린다 — 그 자리는 드라이브
+   사진이 채워야 하고, 실물 기록에 남의 사진이 남아 있으면 안 된다. */
+function adoptPlaces(rows, live){
   const p = LOAD.payload;
   const photoMap = (p && !Array.isArray(p) && p.photos && !Array.isArray(p.photos))
                    ? p.photos : null;
@@ -137,7 +142,8 @@ function adoptPlaces(rows){
       return;
     }
 
-    const shots = shotsOf(rec, photoMap);
+    const sample = !!rec._sample;
+    const shots = (live && sample) ? [] : shotsOf(rec, photoMap);
     const kRaw = str(rec, ['k','cat','category','kind']);
     const heroAt = shots.findIndex(s => s.hero);
     out.push({
@@ -147,11 +153,13 @@ function adoptPlaces(rows){
       n: name,
       j: str(rec, ['j','jp','nameJa','ja']),
       k: CAT[kRaw] ? kRaw : guessCat(name),
-      ph: countOf(rec, shots),
+      // 샘플은 미리 정해둔 장수를 그대로 쓴다 — 샘플 사진 뒤는 색 타일이 채운다
+      ph: sample ? (num(rec, ['ph']) || shots.length) : countOf(rec, shots),
       pay: payOf(rec),
       shots,
       hero: heroAt < 0 ? 0 : heroAt,
-      rid: str(rec, ['id','pid','key','placeId'])
+      rid: str(rec, ['id','pid','key','placeId']),
+      _sample: sample
     });
     stat.kept++;
   });
@@ -181,9 +189,9 @@ function saveHero(p){
 async function syncFromDrive(){
   LOAD.error = null; LOAD.payload = null;
   const rows = await loadPlaces();
-  const stat = adoptPlaces(rows);
+  const stat = adoptPlaces(rows, true);
   isLive = !!stat.kept;
-  if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
+  if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
   refreshAll();
   return stat;
 }
@@ -227,14 +235,14 @@ async function boot(){
   buildDays(); markRegionCounts(); drawScreen();
 
   const rows = await loadPlaces();
-  const stat = adoptPlaces(rows);
+  const stat = adoptPlaces(rows, true);
   const p = LOAD.payload;
 
   // 드라이브에서 건진 장소가 하나도 없으면 샘플 일정으로 채운다 —
   // 빈 지도보다 "사진을 올리면 이렇게 된다"를 먼저 보여주는 편이 낫다.
   const sample = !stat.kept;
   isLive = !sample;                    // 펼쳐보기는 실데이터일 때만 채운다
-  if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
+  if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
   refreshAll();
 
   // 지도 위에는 안내를 띄우지 않는다 — 상태 표시는 drawScreen() 이 지역별로만 처리하고,
