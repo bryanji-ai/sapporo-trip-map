@@ -206,7 +206,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .hint{padding:16px 18px;color:var(--ink-3);font-size:12.5px;text-align:center}
 
 /* ══════════ 인쇄 포스터 — 홋카이도 전체 한 장 ══════════ */
-.printview{padding:22px 14px 70px;display:none}
+.printview{padding:8px 6px 12px;display:none}
 .printview.on{display:block}
 .screen.off{display:none}
 .pnote{
@@ -236,15 +236,9 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border-top:1px solid var(--line);margin-top:1.4cqw;padding-top:1.3cqw;
   display:flex;gap:2cqw;align-items:flex-end;justify-content:center;
 }
-.p-legend{display:flex;flex-wrap:wrap;gap:.5cqw 2cqw;justify-content:center}
-.p-legend div{display:flex;align-items:center;gap:.6cqw;font-size:1.05cqw;color:var(--ink-2)}
-.p-legend i{width:.9cqw;height:.9cqw;border-radius:50%;display:block;flex:0 0 auto}
-.p-legend i.sq{border-radius:.15cqw}
-.p-legend b{color:var(--ink);font-weight:500}
-
 .lbl{font-family:"Jua",sans-serif;fill:var(--map-ink);paint-order:stroke;stroke:var(--map-halo);stroke-width:3px;stroke-linejoin:round}
 .lbl-sub{fill:var(--map-ink-2);font-family:"IBM Plex Mono",monospace}
-.leader{stroke:var(--map-ink-2);stroke-width:3.0;fill:none;opacity:.88}
+.leader{stroke:var(--map-ink);stroke-width:3.0;fill:none;opacity:.88}
 .lbl-bg{fill:var(--map-halo);opacity:.82}
 
 @media print{
@@ -255,7 +249,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   .poster{width:100%;height:100vh;border:0;box-shadow:none;background:#fff}
 }
 @media (max-width:900px){
-  .printview{padding:16px 10px 60px}
+  .printview{padding:6px 4px 8px}
 }
 
 /* ══════════ 펼쳐보기 ══════════ */
@@ -294,7 +288,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   .screen,.expand{max-width:560px}
 }
 @media (max-width:600px){
-  .printview{padding:14px 8px 60px}
+  .printview{padding:4px 2px 6px}
   .pnote{font-size:11.5px;gap:9px}
 }
 
@@ -416,7 +410,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
       </div>
     </div>
     <div class="p-foot">
-      <div class="p-legend" id="plegend"></div>
+      
     </div>
   </div>
 </section>
@@ -1639,7 +1633,7 @@ function drawPoster(){
     .map(([,v]) => `<div><i style="background:var(${v.c})"></i><b>${v.n}</b></div>`).join('');
   leg += ['밀','라벤더','감자'].map((n,i) =>
     `<div><i class="sq" style="background:var(--${['wheat','lav','potato'][i]})"></i><b>${n}밭</b></div>`).join('');
-  document.getElementById('plegend').innerHTML = leg;
+  
 }
 
 /* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════ */
