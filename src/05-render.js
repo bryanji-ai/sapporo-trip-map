@@ -53,10 +53,20 @@ function pinSvg(x, y, ph, color, i, on){
     + `<circle cx="${x.toFixed(1)}" cy="${(y-r*1.6).toFixed(1)}" r="${(r*0.42).toFixed(1)}" fill="#FFFFFF"/></g>`;
 }
 
+/* 지도는 남은 화면을 채운다 — 안내를 접으면 그만큼 세로로 커진다.
+   문서 기준 top 을 쓰므로 스크롤 위치와 무관하게 같은 값이 나온다. */
+function mapRatio(){
+  const w = mapwrap.clientWidth;
+  if (!w) return 1.15;                                   // 지도 탭이 닫혀 있을 때
+  const top   = mapwrap.getBoundingClientRect().top + scrollY;
+  const avail = innerHeight - top - 74;                  // 아래 안내문 한 줄 자리
+  return Math.max(1.02, Math.min(1.6, avail / w));
+}
+
 function drawScreen(){
   const R = REGIONS[current];
   const vs = placesOf(current);
-  const vb = fit(R.map, vs.map(({p})=>R.px(p.lat,p.lon)), R.kind==='rural'?70:90, 1.15);
+  const vb = fit(R.map, vs.map(({p})=>R.px(p.lat,p.lon)), R.kind==='rural'?70:90, mapRatio());
   const vbs = vb.map(v=>v.toFixed(1)).join(' ');
 
   if (mapbase.dataset.g !== current){
@@ -397,9 +407,20 @@ function tab(which){
   document.getElementById('intro').style.display = which==='screen' ? '' : 'none';
   closeSheet(which !== 'screen');
   window.scrollTo({top:0});
-  if (which === 'print') requestAnimationFrame(drawPoster);   // 패널 크기 잡힌 뒤에
+  if (which === 'print')  requestAnimationFrame(drawPoster);   // 패널 크기 잡힌 뒤에
+  if (which === 'screen') requestAnimationFrame(drawScreen);   // 남은 높이 다시 재고
 }
 for (const k of Object.keys(TABS)) TABS[k][0].onclick = () => tab(k);
+
+/* ══════════ 사용 안내 접기/펼치기 ══════════ */
+const guideToggle = document.getElementById('guideToggle');
+guideToggle.addEventListener('click', function(){
+  const open = this.getAttribute('aria-expanded') === 'true';
+  this.setAttribute('aria-expanded', String(!open));
+  document.getElementById('guideBody').hidden = open;
+  this.querySelector('.guide-toggle-icon').textContent = open ? '▾' : '▴';
+  drawScreen();   // 안내가 여닫힌 만큼 지도 비율을 다시 잡는다
+});
 
 /* 인쇄 탭이 열려 있을 때만 포스터를 다시 그린다 (패널 크기를 재야 하므로) */
 function posterRefresh(){
@@ -414,11 +435,14 @@ function applyHash(){
 }
 addEventListener('hashchange', applyHash);
 
-/* 창 크기가 바뀌면 포스터 패널 비율이 달라진다 */
+/* 창 크기가 바뀌면 포스터 패널 비율도, 지도에 남는 높이도 달라진다 */
 let rt;
 addEventListener('resize', () => {
   clearTimeout(rt);
-  rt = setTimeout(() => { if (TABS.print[1].classList.contains('on')) drawPoster(); }, 160);
+  rt = setTimeout(() => {
+    if (TABS.print[1].classList.contains('on')) drawPoster();
+    else if (!TABS.screen[1].classList.contains('off')) drawScreen();
+  }, 160);
 });
 
 /* 데이터가 채워지거나 바뀌면 화면 전체를 다시 만든다 */

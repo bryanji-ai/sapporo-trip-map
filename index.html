@@ -127,7 +127,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 @media (prefers-reduced-motion:reduce){.mapwrap{transition:none}}
 .mapwrap svg,.p-map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 #mapbase,.p-map .pbase{filter:blur(.3px)}   /* 수채화처럼 살짝 번진 엣지 — 핀은 위 레이어라 선명 */
-.mapwrap{aspect-ratio:1/1.15}
+.mapwrap{aspect-ratio:1/1.15;min-height:260px}
 #sharedefs{position:absolute;width:0;height:0;overflow:hidden}
 .scalebar{
   position:absolute;left:12px;bottom:8px;font-family:"IBM Plex Mono",monospace;
@@ -354,7 +354,18 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .pill-t{font-family:"Jua","IBM Plex Sans KR",sans-serif;fill:var(--map-ink)}
 
 /* ── 어니 안내 ── */
-.intro{max-width:520px;margin:0 auto;padding:26px 18px 10px}
+.intro{max-width:520px;margin:0 auto;padding:12px 18px 0}
+.guide-toggle{
+  display:flex; align-items:center; gap:8px; width:100%;
+  padding:10px 16px; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; cursor:pointer; font:inherit; font-size:14px; font-weight:700;
+  color:var(--ink); text-align:left;
+}
+.guide-toggle:hover{background:var(--paper)}
+.guide-toggle:focus-visible{outline:2px solid var(--d13);outline-offset:2px}
+.guide-toggle-label{flex:1}
+.guide-toggle-icon{font-size:12px;color:var(--ink-3);transition:transform .2s}
+.guide-body{padding-top:18px}
 .intro h1{font-size:24px;letter-spacing:-.01em}
 .intro p{margin:11px 0 0;font-size:14px;line-height:1.75;color:var(--ink-2)}
 .intro p b{color:var(--ink);font-weight:500}
@@ -401,6 +412,12 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 </div>
 
 <section class="intro" id="intro">
+  <button class="guide-toggle" id="guideToggle" aria-expanded="false" aria-controls="guideBody">
+    <span class="guide-toggle-label">사용 안내</span>
+    <span class="guide-toggle-icon">▾</span>
+  </button>
+
+  <div class="guide-body" id="guideBody" hidden>
   <h1>사진만 올리면 지도가 채워져요</h1>
   <p>홋카이도에 다녀오면 <b>우리가 간 곳이 지도에 남는 기록</b>이 됩니다.
      사진에 박힌 <b>위치 정보(GPS)</b>를 읽어 <b>삿포로 · 오타루 · 비에이</b> 중
@@ -421,6 +438,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   <p class="ask">지도 왼쪽 위의 <b>삿포로 · 비에이 · 오타루</b>를 눌러 세 지역을 오가고,
      위쪽 <b>지도 · 펼쳐보기 · 인쇄</b> 세 개도 눌러봐요.
      색이나 배치 중에 마음에 안 드는 게 있으면 알려줘요.</p>
+  </div>
 </section>
 
 <main class="screen" id="screen">
@@ -1721,10 +1739,20 @@ function pinSvg(x, y, ph, color, i, on){
     + `<circle cx="${x.toFixed(1)}" cy="${(y-r*1.6).toFixed(1)}" r="${(r*0.42).toFixed(1)}" fill="#FFFFFF"/></g>`;
 }
 
+/* 지도는 남은 화면을 채운다 — 안내를 접으면 그만큼 세로로 커진다.
+   문서 기준 top 을 쓰므로 스크롤 위치와 무관하게 같은 값이 나온다. */
+function mapRatio(){
+  const w = mapwrap.clientWidth;
+  if (!w) return 1.15;                                   // 지도 탭이 닫혀 있을 때
+  const top   = mapwrap.getBoundingClientRect().top + scrollY;
+  const avail = innerHeight - top - 74;                  // 아래 안내문 한 줄 자리
+  return Math.max(1.02, Math.min(1.6, avail / w));
+}
+
 function drawScreen(){
   const R = REGIONS[current];
   const vs = placesOf(current);
-  const vb = fit(R.map, vs.map(({p})=>R.px(p.lat,p.lon)), R.kind==='rural'?70:90, 1.15);
+  const vb = fit(R.map, vs.map(({p})=>R.px(p.lat,p.lon)), R.kind==='rural'?70:90, mapRatio());
   const vbs = vb.map(v=>v.toFixed(1)).join(' ');
 
   if (mapbase.dataset.g !== current){
@@ -2065,9 +2093,20 @@ function tab(which){
   document.getElementById('intro').style.display = which==='screen' ? '' : 'none';
   closeSheet(which !== 'screen');
   window.scrollTo({top:0});
-  if (which === 'print') requestAnimationFrame(drawPoster);   // 패널 크기 잡힌 뒤에
+  if (which === 'print')  requestAnimationFrame(drawPoster);   // 패널 크기 잡힌 뒤에
+  if (which === 'screen') requestAnimationFrame(drawScreen);   // 남은 높이 다시 재고
 }
 for (const k of Object.keys(TABS)) TABS[k][0].onclick = () => tab(k);
+
+/* ══════════ 사용 안내 접기/펼치기 ══════════ */
+const guideToggle = document.getElementById('guideToggle');
+guideToggle.addEventListener('click', function(){
+  const open = this.getAttribute('aria-expanded') === 'true';
+  this.setAttribute('aria-expanded', String(!open));
+  document.getElementById('guideBody').hidden = open;
+  this.querySelector('.guide-toggle-icon').textContent = open ? '▾' : '▴';
+  drawScreen();   // 안내가 여닫힌 만큼 지도 비율을 다시 잡는다
+});
 
 /* 인쇄 탭이 열려 있을 때만 포스터를 다시 그린다 (패널 크기를 재야 하므로) */
 function posterRefresh(){
@@ -2082,11 +2121,14 @@ function applyHash(){
 }
 addEventListener('hashchange', applyHash);
 
-/* 창 크기가 바뀌면 포스터 패널 비율이 달라진다 */
+/* 창 크기가 바뀌면 포스터 패널 비율도, 지도에 남는 높이도 달라진다 */
 let rt;
 addEventListener('resize', () => {
   clearTimeout(rt);
-  rt = setTimeout(() => { if (TABS.print[1].classList.contains('on')) drawPoster(); }, 160);
+  rt = setTimeout(() => {
+    if (TABS.print[1].classList.contains('on')) drawPoster();
+    else if (!TABS.screen[1].classList.contains('off')) drawScreen();
+  }, 160);
 });
 
 /* 데이터가 채워지거나 바뀌면 화면 전체를 다시 만든다 */

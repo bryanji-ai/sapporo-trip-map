@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /tmp && cat > /tmp/_gs_test2.js <<'EOF'\\n// Places API 키가 있을 때 — 조회 결과가 명소표보다 우선하는지, 캐시가 먹는지\\nlet fetches = 0;\\nglobal.PropertiesService = { getScriptProperties: () => ({ getProperty: (...",
+  "error": "Exit code 1\n✅ Places 조회가 명소표보다 우선 → food (places)\n✅ 같은 좌표 재조회는 캐시로 → 추가 호출 0건\n[{\"n\":\"오도리공원\",\"k\":\"food\",\"src\":\"places\"},{\"n\":\"숙소\",\"k\":\"stay\",\"src\":\"sheet\"},{\"n\":\"어딘가\",\"k\":\"food\",\"src\":\"hour\"}]\n❌ apiPlaces 통합 (withGeo=3)\n✅ action=classify → {\"k\":\"move\",\"src\":\"spot:삿포로역\"}\n\n실패 1건",
+  "timestamp": "2026-09-08T15:25:53.805Z",
+  "retry_count": 2
+}

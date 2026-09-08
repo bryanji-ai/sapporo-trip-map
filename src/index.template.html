@@ -33,6 +33,12 @@ img{max-width:100%}
 </div>
 
 <section class="intro" id="intro">
+  <button class="guide-toggle" id="guideToggle" aria-expanded="false" aria-controls="guideBody">
+    <span class="guide-toggle-label">사용 안내</span>
+    <span class="guide-toggle-icon">▾</span>
+  </button>
+
+  <div class="guide-body" id="guideBody" hidden>
   <h1>사진만 올리면 지도가 채워져요</h1>
   <p>홋카이도에 다녀오면 <b>우리가 간 곳이 지도에 남는 기록</b>이 됩니다.
      사진에 박힌 <b>위치 정보(GPS)</b>를 읽어 <b>삿포로 · 오타루 · 비에이</b> 중
@@ -53,6 +59,7 @@ img{max-width:100%}
   <p class="ask">지도 왼쪽 위의 <b>삿포로 · 비에이 · 오타루</b>를 눌러 세 지역을 오가고,
      위쪽 <b>지도 · 펼쳐보기 · 인쇄</b> 세 개도 눌러봐요.
      색이나 배치 중에 마음에 안 드는 게 있으면 알려줘요.</p>
+  </div>
 </section>
 
 <main class="screen" id="screen">
