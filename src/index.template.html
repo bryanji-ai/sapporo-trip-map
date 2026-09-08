@@ -88,6 +88,8 @@ img{max-width:100%}
     <span><b>A2 가로</b> 594 × 420 mm</span>
     <span>삿포로 · 오타루 · 비에이를 한 장에</span>
     <span>지도는 벡터라 확대해도 선이 뭉개지지 않습니다</span>
+    <span><b>지도를 누르면</b> 전체 화면으로 열려요</span>
+    <span><b>여백을 누르면</b> 사진을 모아 볼 수 있어요</span>
   </div>
   <div class="poster">
     <div class="p-head">
@@ -96,15 +98,15 @@ img{max-width:100%}
     </div>
     <!-- 홋카이도 실제 지형대로 — 삿포로 왼쪽 전체, 오타루 북서(우상단), 비에이 북동 내륙(우하단) -->
     <div class="p-body">
-      <div class="p-panel big pn-sapporo">
+      <div class="p-panel big pn-sapporo" data-region="sapporo">
         <div class="cap">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
-      <div class="p-panel sm pn-otaru">
+      <div class="p-panel sm pn-otaru" data-region="otaru">
         <div class="cap">오타루 <em>小樽</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
       </div>
-      <div class="p-panel sm pn-biei">
+      <div class="p-panel sm pn-biei" data-region="biei">
         <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
       </div>

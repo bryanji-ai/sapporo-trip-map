@@ -102,10 +102,94 @@ function openPlacePhotos(i, k){
   openLightbox(list.map(o => o.url), at < 0 ? 0 : at);
 }
 
-/* 인쇄 탭 — 포스터의 대표 사진은 SVG <image> 라 img 가 아니다 */
+/* ══ 전체 사진 갤러리 — 인쇄 탭 포스터를 누르면 열린다 ══
+   포스터에는 장소마다 대표 사진 한 장만 올라간다. 나머지 사진을
+   지역 · 날짜 순으로 한 번에 훑어보게 하는 층이다.
+   한 장소에 6장까지 늘어놓고, 넘치는 만큼은 「+N」 타일이 라이트박스로 잇는다. */
+let galNode = null;                   // 열려 있는 갤러리
+const GAL_MAX = 6;                    // 한 장소에 늘어놓는 썸네일 정원
+
+/* 갤러리 본문 — 포스터와 같은 지역 순서(삿포로 → 오타루 → 비에이)로 */
+function galleryBody(){
+  let html = '';
+  PANELS.forEach(pn => {
+    const R = REGIONS[pn.key];
+    // 사진이 실제로 붙어 있는 장소만 — 색 타일로만 채워진 자리는 건너뛴다
+    const list = placesOf(pn.key)
+      .map(({p,i}) => ({p, i, shots:(p.shots || [])
+        .map((s,k) => ({k, u:shotUrl(s, 400)})).filter(o => o.u)}))
+      .filter(o => o.shots.length);
+    if (!list.length) return;
+
+    const days = [...new Set(list.map(o => o.p.d))].sort(dayCmp);
+    html += `<section class="gallery-region">`
+      + `<h3>${R.name} ${R.jp}${days.length ? ` · ${days.join(' · ')}` : ''}</h3>`
+      + `<div class="gallery-spots">`;
+
+    list.forEach(({p, i, shots}) => {
+      const shown = shots.slice(0, GAL_MAX);
+      html += `<div class="gallery-spot">`
+        + `<p class="spot-name">${p.n}<span>${p.d}${p.t === '--:--' ? '' : ` · ${p.t}`}</span></p>`
+        + `<div class="gallery-photos">`
+        + shown.map(o =>
+            `<img src="${o.u}" loading="lazy" decoding="async" alt=""
+                  data-pi="${i}" data-k="${o.k}">`).join('')
+        + (shots.length > shown.length
+            ? `<button class="gallery-more" data-pi="${i}" data-k="${shots[shown.length].k}"
+                 aria-label="${p.n} 사진 더 보기">+${shots.length - shown.length}</button>`
+            : '')
+        + `</div></div>`;
+    });
+    html += `</div></section>`;
+  });
+  return html;
+}
+
+function openGallery(){
+  if (galNode) return;
+  const body = galleryBody();
+  const g = document.createElement('div');
+  g.className = 'gallery-modal';
+  g.id = 'galleryModal';
+  g.setAttribute('role', 'dialog');
+  g.setAttribute('aria-label', '여행 사진 모아보기');
+  g.innerHTML = `<button class="gallery-close" aria-label="닫기">✕</button>`
+    + `<div class="gallery-inner"><h2>📸 여행 사진 모아보기</h2>`
+    + (body || `<p class="gallery-empty">아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p>`)
+    + `</div>`;
+  document.body.appendChild(g);
+
+  g.addEventListener('click', e => {
+    const hit = e.target.closest('.gallery-photos img, .gallery-more');
+    if (hit){ openPlacePhotos(+hit.dataset.pi, +hit.dataset.k); return; }
+    if (e.target.closest('.gallery-close') || e.target === g) closeGallery();
+  });
+  // 라이트박스가 열려 있으면 ESC 는 그쪽이 먼저 받는다 (시트와 같은 규칙)
+  g._key = e => { if (e.key === 'Escape' && !lbNode) closeGallery(); };
+  document.addEventListener('keydown', g._key);
+  g._prevOv = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';   // 뒤 포스터가 따라 스크롤되지 않게
+  galNode = g;
+}
+
+function closeGallery(){
+  if (!galNode) return;
+  closeLightbox();                                      // 겹쳐 있던 사진도 같이 닫는다
+  document.removeEventListener('keydown', galNode._key);
+  document.documentElement.style.overflow = galNode._prevOv;
+  galNode.remove();
+  galNode = null;
+}
+
+/* 인쇄 탭 — 대표 사진(SVG <image> 라 img 가 아니다)은 그 장소만,
+   지도 패널은 그 지역 지도를 전체 화면으로,
+   그 밖의 포스터 여백은 전체 갤러리를 연다 */
 document.getElementById('printview').addEventListener('click', e => {
   const im = e.target.closest('image[data-pi]');
-  if (im) openPlacePhotos(+im.dataset.pi);
+  if (im){ openPlacePhotos(+im.dataset.pi); return; }
+  const panel = e.target.closest('.p-panel[data-region]');
+  if (panel){ openMapFullscreen(panel.dataset.region); return; }
+  if (e.target.closest('.poster')) openGallery();
 });
 
 /* 지도 탭 — 핀을 눌러 열린 시트의 썸네일 (별표·「모두 보기」 버튼은 그대로 둔다) */
@@ -153,6 +237,8 @@ function pinSvg(x, y, ph, color, i, on){
 function mapRatio(){
   const w = mapwrap.clientWidth;
   if (!w) return 1.15;                                   // 지도 탭이 닫혀 있을 때
+  // 전체 화면에서는 지도가 상자를 통째로 쓴다 — 상자 비율 그대로 잡아야 여백이 안 생긴다
+  if (fsNode) return Math.max(0.4, Math.min(3, mapwrap.clientHeight / w));
   const top   = mapwrap.getBoundingClientRect().top + scrollY;
   const avail = innerHeight - top - 74;                  // 아래 안내문 한 줄 자리
   return Math.max(1.02, Math.min(1.6, avail / w));
@@ -317,6 +403,68 @@ sheet.addEventListener('click', e => {
   sheet.addEventListener('pointerup', end);
   sheet.addEventListener('pointercancel', end);
 })();
+
+/* ══ 지도 전체 화면 — 인쇄 탭의 지도 패널을 누르면 열린다 ══
+   지도를 새로 그리지 않고 지도 탭의 .mapwrap 과 하단 시트를 통째로 옮겨 온다.
+   그래야 핀 클릭 → 시트 → 라이트박스, 지역 전환, 축척까지
+   지도 탭에서 하던 동작이 하나도 빠지지 않고 그대로 따라온다. */
+let fsNode = null;
+
+function openMapFullscreen(key){
+  if (fsNode) return;
+  const g = REGIONS[key] ? key : current;
+
+  const fs = document.createElement('div');
+  fs.className = 'map-fullscreen';
+  fs.setAttribute('role', 'dialog');
+  fs.setAttribute('aria-label', '지도 크게 보기');
+  fs.innerHTML = `<button class="map-fs-close" aria-label="닫기">✕</button>`
+    + `<div class="map-fs-inner"></div>`
+    + `<p class="map-fs-hint">핀을 누르면 그곳에서 찍은 사진이 열려요</p>`;
+  document.body.appendChild(fs);
+
+  // 돌아갈 자리를 기억해 둔다 — 닫을 때 원래 순서 그대로 되돌린다
+  fs._mapAt   = [mapwrap.parentNode, mapwrap.nextSibling];
+  fs._sheetAt = [sheet.parentNode,   sheet.nextSibling];
+  closeSheet(true);
+  fs.querySelector('.map-fs-inner').appendChild(mapwrap);
+  fs.appendChild(sheet);                       // 시트가 모달 위에 뜨도록 안쪽으로
+
+  fs._prevOv = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';
+
+  // 라이트박스·시트가 열려 있으면 ESC 는 그쪽 몫 — 캡처로 먼저 받아 판단한다
+  fs._key = e => {
+    if (e.key !== 'Escape' || lbNode || sheet.classList.contains('open')) return;
+    e.stopPropagation();
+    closeMapFullscreen();
+  };
+  document.addEventListener('keydown', fs._key, true);
+  fs.querySelector('.map-fs-close').addEventListener('click', closeMapFullscreen);
+
+  fsNode = fs;
+
+  if (g !== current){                          // 누른 패널의 지역으로 맞춘다
+    current = g;
+    document.querySelectorAll('.regionsw button[data-g]').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.g === g)));
+  }
+  requestAnimationFrame(drawScreen);           // 상자 크기가 잡힌 뒤에 다시 재고 그린다
+}
+
+function closeMapFullscreen(){
+  if (!fsNode) return;
+  const fs = fsNode;
+  fsNode = null;                               // mapRatio 가 다시 지도 탭 기준으로 재도록
+  closeLightbox();
+  closeSheet(true);
+  document.removeEventListener('keydown', fs._key, true);
+  document.documentElement.style.overflow = fs._prevOv;
+  fs._mapAt[0].insertBefore(mapwrap, fs._mapAt[1]);
+  fs._sheetAt[0].insertBefore(sheet, fs._sheetAt[1]);
+  fs.remove();
+  if (!TABS.screen[1].classList.contains('off')) drawScreen();
+}
 
 /* ══════════ 인쇄 포스터 — 삿포로 + 오타루 + 비에이 한 장 ══════════
    홋카이도 실제 지형 배치(배치 자체는 .p-body 격자가 잡는다):
@@ -535,7 +683,8 @@ let rt;
 addEventListener('resize', () => {
   clearTimeout(rt);
   rt = setTimeout(() => {
-    if (TABS.print[1].classList.contains('on')) drawPoster();
+    if (fsNode) drawScreen();                  // 전체 화면 지도가 우선 — 뒤 포스터는 닫을 때 다시 그린다
+    else if (TABS.print[1].classList.contains('on')) drawPoster();
     else if (!TABS.screen[1].classList.contains('off')) drawScreen();
   }, 160);
 });
