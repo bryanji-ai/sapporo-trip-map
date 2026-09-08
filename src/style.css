@@ -389,3 +389,40 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .f0{fill:var(--wheat);stroke:var(--wheat-e)}
 .f1{fill:var(--lav);stroke:var(--lav-e)}
 .f2{fill:var(--potato);stroke:var(--potato-e)}
+
+/* ══ 라이트박스 — 사진을 화면 가득 ══ */
+.photos .ph img.im{cursor:zoom-in}
+.p-map image.p-shot{cursor:zoom-in}
+.lightbox{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.88);
+  display:flex;align-items:center;justify-content:center;
+  cursor:zoom-out;
+}
+.lightbox img{
+  max-width:92vw;max-height:92vh;
+  object-fit:contain;border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5);
+  cursor:default;
+}
+.lightbox-close{
+  position:absolute;top:16px;right:20px;
+  background:none;border:0;color:#fff;font-size:28px;
+  cursor:pointer;opacity:.8;
+}
+.lightbox-close:hover{opacity:1}
+.lightbox-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,0.15);border:0;color:#fff;
+  font-size:24px;padding:12px 16px;border-radius:8px;
+  cursor:pointer;
+}
+.lightbox-arrow:hover{background:rgba(255,255,255,0.25)}
+.lightbox-prev{left:12px}
+.lightbox-next{right:12px}
+.lightbox-count{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.78);font-family:"IBM Plex Mono",monospace;
+  font-size:12px;letter-spacing:.08em;pointer-events:none;
+}
+@media print{.lightbox{display:none!important}}

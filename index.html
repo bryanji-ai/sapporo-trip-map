@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -409,6 +406,43 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .f0{fill:var(--wheat);stroke:var(--wheat-e)}
 .f1{fill:var(--lav);stroke:var(--lav-e)}
 .f2{fill:var(--potato);stroke:var(--potato-e)}
+
+/* ══ 라이트박스 — 사진을 화면 가득 ══ */
+.photos .ph img.im{cursor:zoom-in}
+.p-map image.p-shot{cursor:zoom-in}
+.lightbox{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.88);
+  display:flex;align-items:center;justify-content:center;
+  cursor:zoom-out;
+}
+.lightbox img{
+  max-width:92vw;max-height:92vh;
+  object-fit:contain;border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5);
+  cursor:default;
+}
+.lightbox-close{
+  position:absolute;top:16px;right:20px;
+  background:none;border:0;color:#fff;font-size:28px;
+  cursor:pointer;opacity:.8;
+}
+.lightbox-close:hover{opacity:1}
+.lightbox-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,0.15);border:0;color:#fff;
+  font-size:24px;padding:12px 16px;border-radius:8px;
+  cursor:pointer;
+}
+.lightbox-arrow:hover{background:rgba(255,255,255,0.25)}
+.lightbox-prev{left:12px}
+.lightbox-next{right:12px}
+.lightbox-count{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.78);font-family:"IBM Plex Mono",monospace;
+  font-size:12px;letter-spacing:.08em;pointer-events:none;
+}
+@media print{.lightbox{display:none!important}}
 
 </style>
 </head>
@@ -1724,6 +1758,92 @@ function shotImg(p, k, seed, w){
 }
 function hue(seed){ return [(seed*47)%360, (seed*47+38)%360]; }
 
+/* ══ 라이트박스 — 사진을 화면 가득 ══
+   인쇄 포스터의 대표 사진(SVG <image>)과 시트의 썸네일에서 열린다.
+   같은 장소의 사진끼리 좌우로 넘길 수 있게 한 장소의 shots 를 한 묶음으로 넘긴다. */
+let lbNode = null;                    // 열려 있는 라이트박스 — 시트의 ESC 를 막는 데도 쓴다
+
+function openLightbox(srcs, idx){
+  if (!srcs.length) return;
+  closeLightbox();
+  let cur = Math.max(0, Math.min(idx | 0, srcs.length - 1));
+  const many = srcs.length > 1;
+
+  const lb = document.createElement('div');
+  lb.className = 'lightbox';
+  lb.innerHTML =
+      `<button class="lightbox-close" aria-label="닫기">✕</button>`
+    + (many ? `<button class="lightbox-arrow lightbox-prev" aria-label="이전 사진">‹</button>` : '')
+    + `<img src="" alt="">`
+    + (many ? `<button class="lightbox-arrow lightbox-next" aria-label="다음 사진">›</button>` : '')
+    + (many ? `<div class="lightbox-count"></div>` : '');
+  document.body.appendChild(lb);
+
+  const img = lb.querySelector('img');
+  const cnt = lb.querySelector('.lightbox-count');
+  const go = d => {
+    cur = (cur + d + srcs.length) % srcs.length;
+    img.src = srcs[cur];
+    if (cnt) cnt.textContent = `${cur+1} / ${srcs.length}`;
+  };
+  go(0);
+
+  lb.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });   // 배경만
+  lb.querySelector('.lightbox-prev')?.addEventListener('click', e => { e.stopPropagation(); go(-1); });
+  lb.querySelector('.lightbox-next')?.addEventListener('click', e => { e.stopPropagation(); go(1); });
+
+  lb._key = e => {
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft'  && many){ e.preventDefault(); go(-1); }
+    else if (e.key === 'ArrowRight' && many){ e.preventDefault(); go(1); }
+  };
+  document.addEventListener('keydown', lb._key);
+  lb._prevOv = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';   // 뒤 페이지가 따라 스크롤되지 않게
+  lbNode = lb;
+}
+
+function closeLightbox(){
+  if (!lbNode) return;
+  document.removeEventListener('keydown', lbNode._key);
+  document.documentElement.style.overflow = lbNode._prevOv;
+  lbNode.remove();
+  lbNode = null;
+}
+
+/* 한 장소의 사진 목록 — 원본 shots 순번(k)을 같이 들고 다녀야 시트에서 누른 장을 찾을 수 있다 */
+function lbShots(p){
+  return (p.shots || [])
+    .map((s,k) => ({k, url: s && s.id ? photoUrl(s.id, 1600) : ''}))
+    .filter(o => o.url);
+}
+/* i 번째 장소의 사진을 연다 — k 를 주면 그 장부터, 없으면 대표 사진부터 */
+function openPlacePhotos(i, k){
+  const p = PLACES[i];
+  if (!p) return;
+  const list = lbShots(p);
+  if (!list.length) return;                             // 색 타일(사진 없음)은 열지 않는다
+  const want = k == null ? (p.hero || 0) : k;
+  const at = list.findIndex(o => o.k === want);
+  openLightbox(list.map(o => o.url), at < 0 ? 0 : at);
+}
+
+/* 인쇄 탭 — 포스터의 대표 사진은 SVG <image> 라 img 가 아니다 */
+document.getElementById('printview').addEventListener('click', e => {
+  const im = e.target.closest('image[data-pi]');
+  if (im) openPlacePhotos(+im.dataset.pi);
+});
+
+/* 지도 탭 — 핀을 눌러 열린 시트의 썸네일 (별표·「모두 보기」 버튼은 그대로 둔다) */
+document.getElementById('sheet').addEventListener('click', e => {
+  if (e.target.closest('button')) return;
+  const ph = e.target.closest('.photos .ph');
+  if (!ph || !ph.querySelector('img')) return;
+  const all = [...ph.parentElement.children];
+  openPlacePhotos(openIdx, all.indexOf(ph));
+});
+
 /* ══════════ 화면 상태 (불러오는 중 · 없음 · 실패) ══════════ */
 const mapstate = document.getElementById('mapstate');
 
@@ -1872,7 +1992,7 @@ mapover.addEventListener('keydown', e => {
   const g = e.target.closest('.pin');
   if (g && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); openPin(+g.dataset.i); }
 });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeSheet(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape' && !lbNode) closeSheet(); });
 sheet.addEventListener('click', e => {
   if (e.target.closest('#more')){ allPhotos = !allPhotos; openPin(openIdx); return; }
   const b = e.target.closest('.star');
@@ -2007,7 +2127,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const shot = heroShot(PLACES[s.src]);
     if (shot && shot.id){
       clips += `<clipPath id="${cid}"><rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="${RX}"/></clipPath>`;
-      g += `<image href="${photoUrl(shot.id, 900)}" x="${X}" y="${Y}" width="${S}" height="${S}"
+      g += `<image class="p-shot" data-pi="${s.src}" href="${photoUrl(shot.id, 900)}" x="${X}" y="${Y}" width="${S}" height="${S}"
               preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>`;
     } else {
       const [h1,h2] = hue(s.src*7 + (PLACES[s.src].hero||0));
