@@ -44,9 +44,9 @@ const mapbase  = document.getElementById('mapbase');
 const mapover  = document.getElementById('mapover');
 const mapillust= document.getElementById('mapillust');
 
-/* 핀 하나 그리기 — 크기는 사진 수 */
+/* 핀 하나 그리기 — 크기는 고정(사진 수와 무관) */
 function pinSvg(x, y, ph, color, i, on){
-  const r = 5.6 + Math.min(ph,24)/24 * 6.6;
+  const r = 8.0;
   return `<g class="pin${on?' on':''}" data-i="${i}" tabindex="0" role="button">`
     + `<circle class="halo" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*2.4).toFixed(1)}" fill="${color}"/>`
     + `<path class="core" d="M${x.toFixed(1)},${(y+r*0.5).toFixed(1)} c${(-r*1.15).toFixed(1)},${(-r*0.9).toFixed(1)} ${(-r*1.5).toFixed(1)},${(-r*1.5).toFixed(1)} ${(-r*1.5).toFixed(1)},${(-r*2.1).toFixed(1)} a${r.toFixed(1)},${r.toFixed(1)} 0 1 1 ${(r*3).toFixed(1)},0 c0,${(r*0.6).toFixed(1)} ${(-r*0.35).toFixed(1)},${(r*1.2).toFixed(1)} ${(-r*1.5).toFixed(1)},${(r*2.1).toFixed(1)} Z" fill="${color}"/>`
