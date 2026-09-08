@@ -186,6 +186,7 @@ async function boot(){
   // 드라이브에서 건진 장소가 하나도 없으면 샘플 일정으로 채운다 —
   // 빈 지도보다 "사진을 올리면 이렇게 된다"를 먼저 보여주는 편이 낫다.
   const sample = !stat.kept;
+  isLive = !sample;                    // 펼쳐보기는 실데이터일 때만 채운다
   if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES); }
   refreshAll();
 

@@ -342,8 +342,16 @@ function stampPosterDays(){
   });
 }
 
-/* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════ */
+/* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════
+   샘플 데이터(isLive === false)일 때는 아무것도 그리지 않는다 —
+   지도 핀은 위치 참고용으로 남겨두지만, 「펼쳐보기」에 가짜 일정이
+   진짜 여행 기록처럼 쌓여 보이면 안 되기 때문이다. */
 function buildExpand(){
+  if (!isLive){
+    document.getElementById('exbody').innerHTML =
+      `<p class="ex-empty">드라이브에 사진을 올리면 여기에 여행 기록이 채워져요 📸</p>`;
+    return;
+  }
   let html = '';
   DAYS.forEach(d => {
     const list = PLACES.map((p,i)=>({p,i})).filter(o => o.p.d === d.id)
