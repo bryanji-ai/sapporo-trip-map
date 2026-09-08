@@ -1,0 +1,320 @@
+:root{
+  /* ══ 디자인 시스템 · 수채 일러스트 팔레트 ══ */
+  --bg:#FFF8E8;            /* 페이지 배경 */
+  --map-bg:#F4E9CF;        /* 지반 — 따뜻한 크림 베이지 */
+  --road:#E0D2B5;          /* 도로 — 연한 크림 */
+  --building:#D9B98C;      /* 건물 기준색 — 실제 블록은 아래 파스텔 6색 */
+  --park:#A8C49A;          /* 공원 */
+  --forest:#527A62;        /* 나무 */
+  --water:#8CCFE0;         /* 강·수로 */
+  --sapporo-blue:#5FAFC4;  /* 핀 — 시장·교통 */
+  --tourist:#E7B84B;       /* 핀 — 주요 관광지 */
+  --food:#E97862;          /* 핀 — 맛집·쇼핑 */
+  --accent:#E89A62;        /* 핀 — 특별 일정 */
+  --hotel:#8C75C7;         /* 핀 — 숙소 */
+  --text:#263A3D;
+  --card:#FFFCF3;
+
+  /* 파생 — 지면·잉크 */
+  --paper:var(--bg); --ink:var(--text); --ink-2:#5C7073; --ink-3:#93A3A3;
+  --line:#EADCC1; --line-2:#F4EBD8;
+  --pin-stroke:#FFFFFF; --map-halo:#FFFCF3; --map-ink:#263A3D; --map-ink-2:#6C7E7E;
+
+  /* 파생 — 지도 (종이 지도라 다크에서도 반전하지 않는다) */
+  --land:var(--map-bg); --land-2:#EEE0C0; --land-edge:#E2D2B0;
+  --green:var(--park); --park-mid:#BCD4AF; --park-wash:#93B58A;
+  --green-2:#6E9679; --green-3:var(--forest); --green-line:#8CAE96;
+  --water-2:#74C2D6; --water-line:var(--sapporo-blue);
+  --road-fill:var(--road); --road-case:#D3C09F; --road-min:#E9DEC6;
+  --rail:#CDBFA4; --wash-shade:#C4B292;
+  --icon:#3E5254; --icon-2:#FFFCF3; --roof:#E2856B; --roof-2:#E0A85E;
+  /* 나무 — #527A62 계열 */
+  --t0:var(--forest); --t1:#6E9679; --t2:#43654F;
+  /* 건물 — 2D 파스텔 직사각형 (외곽선은 면색보다 20% 어둡게)
+     r4·r1 주거(가장 많은 덩어리) / r2·r5·r3 상업 / r0 공공 */
+  --r0:#D4B896; --r1:#F0B87A; --r2:#C9B8E8; --r3:#B8E0D4; --r4:#F2C9A0; --r5:#B8D4E8;
+  --r0e:#AA9378; --r1e:#C09362; --r2e:#A193BA; --r3e:#93B3AA; --r4e:#C2A180; --r5e:#93AABA;
+
+  /* ══ 비에이 — 밭 패치워크 3색 + 언덕 ══ */
+  --wheat:#EFD886;  --wheat-e:#CFB358;   /* 밀 — 노랑 */
+  --lav:#C4AFE2;    --lav-e:#9A83C2;     /* 라벤더 — 연보라 */
+  --potato:#BDD795; --potato-e:#96B76F;  /* 감자 — 연초록 */
+  --hill-line:#C0AE86;                   /* 등고선 */
+
+  /* 날짜 — 펼쳐보기 회상용 (핀 색과 별개) */
+  --d11:#E97862; --d12:#8C75C7; --d13:#5FAFC4; --d14:#E7B84B;
+  --shadow:0 1px 2px rgba(38,58,61,.06),0 8px 22px rgba(38,58,61,.09);
+}
+/* 다크에서는 페이지 껍데기만 어두워지고, 지도 팔레트는 그대로 둔다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#14191A; --card:#1C2325; --ink:#F0E9DC; --ink-2:#B7AC99; --ink-3:#82796A;
+    --line:#2C3436; --line-2:#232A2C;
+    --d11:#F5825C; --d12:#AE8FE4; --d13:#3FBECB; --d14:#EFC154;
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14191A; --card:#1C2325; --ink:#F0E9DC; --ink-2:#B7AC99; --ink-3:#82796A;
+  --line:#2C3436; --line-2:#232A2C;
+  --d11:#F5825C; --d12:#AE8FE4; --d13:#3FBECB; --d14:#EFC154;
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Noto Sans JP",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+  font-weight:300; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;text-wrap:balance;letter-spacing:.005em}
+
+/* ── 샘플 안내 띠 ── */
+.notice{
+  background:var(--ink); color:var(--paper); padding:9px 18px;
+  font-size:12px; letter-spacing:.02em; display:flex; gap:10px;
+  align-items:center; justify-content:center; flex-wrap:wrap; text-align:center;
+}
+.notice b{font-weight:600}
+
+/* ── 상단 전환 ── */
+.switch{
+  position:sticky; top:0; z-index:30; background:var(--paper);
+  border-bottom:1px solid var(--line); display:flex; gap:2px; padding:8px 14px;
+  align-items:center;
+}
+.switch .brand{font-family:"Jua",sans-serif;font-size:15px;margin-right:auto;letter-spacing:-.01em}
+.switch .brand em{font-style:normal;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-size:11px;margin-left:8px}
+.tab{
+  border:1px solid transparent; background:none; color:var(--ink-3);
+  font:inherit; font-size:13px; padding:6px 13px; border-radius:999px; cursor:pointer;
+}
+.tab[aria-selected="true"]{background:var(--card);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow)}
+.tab:focus-visible{outline:2px solid var(--d13);outline-offset:2px}
+
+/* ══════════ 화면용 ══════════ */
+.screen{max-width:520px;margin:0 auto;padding:0 0 96px}
+.summary{padding:20px 18px 14px;display:flex;align-items:flex-end;gap:10px}
+.summary h1{font-size:27px;line-height:1.25;letter-spacing:-.015em}
+.summary .jp{font-size:12px;color:var(--ink-3);font-family:"Noto Sans JP",sans-serif;padding-bottom:4px}
+
+.mapwrap{
+  margin:4px 14px 0;border:1px solid var(--land-edge);border-radius:18px;overflow:hidden;
+  background:var(--land);box-shadow:var(--shadow);position:relative;
+  transition:opacity .19s ease;
+}
+.mapwrap.fade{opacity:0}
+@media (prefers-reduced-motion:reduce){.mapwrap{transition:none}}
+.mapwrap svg,.p-map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#mapbase,.p-map .pbase{filter:blur(.3px)}   /* 수채화처럼 살짝 번진 엣지 — 핀은 위 레이어라 선명 */
+.mapwrap{aspect-ratio:1/1.15}
+#sharedefs{position:absolute;width:0;height:0;overflow:hidden}
+.scalebar{
+  position:absolute;left:12px;bottom:8px;font-family:"IBM Plex Mono",monospace;
+  font-size:10px;color:var(--map-ink-2);display:flex;align-items:center;gap:6px;
+  text-shadow:0 0 3px var(--map-halo),0 0 3px var(--map-halo);
+}
+.scalebar i{display:block;height:5px;border:1px solid var(--map-ink-2);border-top:0;width:var(--w)}
+
+/* ── 지역 전환 (지도 좌상단) ── */
+.regionsw{
+  position:absolute;left:10px;top:10px;z-index:5;display:flex;gap:3px;padding:3px;
+  background:rgba(255,252,243,.86);border:1px solid #E0CFAC;border-radius:999px;
+  box-shadow:0 2px 8px rgba(38,58,61,.13);backdrop-filter:blur(4px);
+}
+.regionsw button{
+  font:inherit;font-family:"Jua",sans-serif;font-size:12.5px;line-height:1;
+  border:0;background:none;color:var(--map-ink-2);padding:6px 12px 7px;
+  border-radius:999px;cursor:pointer;
+}
+.regionsw button[aria-pressed="true"]{background:var(--map-ink);color:#FFFCF3}
+.regionsw button:focus-visible{outline:2px solid var(--d13);outline-offset:1px}
+.regionsw .swap{padding:6px 4px 7px;color:var(--ink-3);font-size:11px;pointer-events:none}
+
+/* 하단 시트 */
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);
+  border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+  box-shadow:0 -6px 28px rgba(30,42,50,.13);
+  transform:translateY(101%);transition:transform .28s cubic-bezier(.3,.8,.3,1);
+  max-height:62vh;overflow-y:auto;padding-bottom:14px;
+}
+.sheet.open{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+.sheet .grab{
+  width:38px;height:4px;border-radius:2px;background:var(--ink-3);opacity:.35;
+  margin:0 auto;position:relative;top:11px;
+}
+.sheet .grabzone{height:26px;touch-action:none;cursor:grab}
+.sheet-head{touch-action:none;cursor:grab}
+.sheet-in{padding:6px 18px 0;max-width:520px;margin:0 auto}
+.sheet .day{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.sheet .day i{width:8px;height:8px;border-radius:50%;display:block}
+.sheet h2{font-size:21px;margin:6px 0 2px;letter-spacing:-.01em}
+.sheet .jp{font-size:12.5px;color:var(--ink-3);font-family:"Noto Sans JP",sans-serif}
+.photos{display:flex;gap:6px;margin:14px -18px 0;padding:0 18px 2px;overflow-x:auto;scrollbar-width:none}
+.photos::-webkit-scrollbar{display:none}
+.photos .ph{flex:0 0 27%;min-width:96px}
+.photos.all{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible;margin-right:-18px;margin-left:-18px;padding:0 18px}
+.photos.all .ph{flex:none;min-width:0}
+.more{
+  display:block;width:100%;margin:10px 0 0;padding:9px 0;background:none;
+  border:1px solid var(--line);border-radius:9px;color:var(--ink-2);
+  font:inherit;font-size:12.5px;cursor:pointer;
+}
+.more:hover{border-color:var(--ink-3)}
+.more:focus-visible{outline:2px solid var(--d13);outline-offset:2px}
+.ph{position:relative;aspect-ratio:1;border-radius:7px;overflow:hidden;background:var(--line-2)}
+.photos .count{
+  flex:0 0 auto;align-self:center;padding:0 14px 0 6px;font-size:11.5px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;white-space:nowrap;
+}
+.ph .im{position:absolute;inset:0}
+.ph .star{
+  position:absolute;right:5px;bottom:5px;width:22px;height:22px;border-radius:50%;
+  border:0;background:rgba(15,22,26,.5);color:#fff;font-size:11px;line-height:22px;
+  padding:0;cursor:pointer;backdrop-filter:blur(3px);
+}
+.ph .star[aria-pressed="true"]{background:var(--d14);color:#1E2A32}
+.ph .star:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.paid{margin:15px 0 0;border-top:1px solid var(--line-2);padding-top:11px}
+.paid .row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;padding:4px 0;color:var(--ink-2)}
+.paid .row b{font-weight:500;color:var(--ink)}
+.paid .row .amt{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.paid .tot{border-top:1px solid var(--line-2);margin-top:7px;padding-top:8px;font-weight:500;color:var(--ink)}
+.hint{padding:16px 18px;color:var(--ink-3);font-size:12.5px;text-align:center}
+
+/* ══════════ 인쇄 포스터 — 홋카이도 전체 한 장 ══════════ */
+.printview{padding:22px 14px 70px;display:none}
+.printview.on{display:block}
+.screen.off{display:none}
+.pnote{
+  max-width:980px;margin:0 auto 18px;font-size:12.5px;color:var(--ink-3);
+  display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;justify-content:center;text-align:center;
+}
+.pnote b{color:var(--ink-2);font-weight:500}
+.poster{
+  width:min(1080px,100%);aspect-ratio:594/420;margin:0 auto;background:var(--card);
+  border:1px solid var(--land-edge);box-shadow:var(--shadow);
+  display:grid;grid-template-rows:auto 1fr auto;padding:2.5%;container-type:inline-size;
+}
+.p-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+  border-bottom:1.5px solid var(--ink);padding-bottom:1.5cqw}
+.p-head h2{font-size:3.6cqw;letter-spacing:-.02em;line-height:1}
+.p-head .sub{font-family:"IBM Plex Mono",monospace;font-size:1.12cqw;color:var(--ink-2);letter-spacing:.1em;text-align:right;line-height:1.7}
+.p-body{display:grid;grid-template-columns:1fr 1fr;gap:1.6cqw;margin:1.7cqw 0 0;min-height:0}
+.p-panel{position:relative;min-height:0;display:flex;flex-direction:column}
+.p-panel .cap{
+  font-family:"Jua",sans-serif;font-size:1.5cqw;color:var(--ink-2);
+  display:flex;align-items:baseline;gap:.7cqw;padding-bottom:.5cqw;
+}
+.p-panel .cap em{font-style:normal;font-family:"Noto Sans JP",sans-serif;font-size:1.02cqw;color:var(--ink-3)}
+.p-panel .cap span{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:.95cqw;color:var(--ink-3);letter-spacing:.06em}
+.p-map{position:relative;flex:1 1 auto;min-height:0}
+.p-foot{
+  border-top:1px solid var(--line);margin-top:1.4cqw;padding-top:1.3cqw;
+  display:flex;gap:2cqw;align-items:flex-end;justify-content:center;
+}
+.p-legend{display:flex;flex-wrap:wrap;gap:.5cqw 2cqw;justify-content:center}
+.p-legend div{display:flex;align-items:center;gap:.6cqw;font-size:1.05cqw;color:var(--ink-2)}
+.p-legend i{width:.9cqw;height:.9cqw;border-radius:50%;display:block;flex:0 0 auto}
+.p-legend i.sq{border-radius:.15cqw}
+.p-legend b{color:var(--ink);font-weight:500}
+
+.lbl{font-family:"Jua",sans-serif;fill:var(--map-ink);paint-order:stroke;stroke:var(--map-halo);stroke-width:3px;stroke-linejoin:round}
+.lbl-sub{fill:var(--map-ink-2);font-family:"IBM Plex Mono",monospace}
+.leader{stroke:var(--map-ink-2);stroke-width:3.0;fill:none;opacity:.88}
+.lbl-bg{fill:var(--map-halo);opacity:.82}
+
+@media print{
+  @page{size:594mm 420mm;margin:0}   /* A2 가로 — A2는 CSS page-size 키워드가 아니라 실측으로 준다 */
+  .p-map .pbase{filter:none}   /* 인쇄는 벡터 그대로 */
+  .notice,.switch,.pnote,.screen,.sheet,.intro{display:none!important}
+  .printview{display:block!important;padding:0}
+  .poster{width:100%;height:100vh;border:0;box-shadow:none;background:#fff}
+}
+@media (max-width:900px){
+  .printview{padding:16px 10px 60px}
+}
+
+/* ══════════ 펼쳐보기 ══════════ */
+.expand{display:none;max-width:520px;margin:0 auto;padding:6px 0 90px}
+.expand.on{display:block}
+.ex-head{padding:20px 18px 6px}
+.ex-head h1{font-size:25px;letter-spacing:-.015em}
+.ex-head p{margin:7px 0 0;font-size:13px;color:var(--ink-3);line-height:1.6}
+.daysec{margin-top:26px}
+.daybar{
+  position:sticky;top:49px;z-index:10;background:var(--paper);
+  padding:9px 18px 8px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:9px;
+}
+.daybar i{width:9px;height:9px;border-radius:50%;display:block;align-self:center;flex:0 0 auto}
+.daybar b{font-family:"Jua",sans-serif;font-weight:400;font-size:17px}
+.daybar span{font-size:12px;color:var(--ink-3)}
+.daybar em{margin-left:auto;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.spot{padding:16px 18px 4px;border-bottom:1px solid var(--line-2)}
+.spot:last-child{border-bottom:0}
+.spot .top{display:flex;align-items:baseline;gap:9px}
+.spot .tm{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);flex:0 0 auto}
+.spot h3{font-size:18px;letter-spacing:-.01em}
+.spot .jp{font-size:11.5px;color:var(--ink-3);font-family:"Noto Sans JP",sans-serif;margin-top:2px}
+.spot .rg{
+  font-size:10.5px;font-family:"IBM Plex Mono",monospace;letter-spacing:.04em;
+  border:1px solid var(--line);border-radius:999px;padding:2px 7px;color:var(--ink-3);
+  margin-left:auto;flex:0 0 auto;align-self:center;
+}
+.exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
+.exphotos::-webkit-scrollbar{display:none}
+.exphotos .ph{flex:0 0 34%;min-width:112px}
+.exphotos .ph.hero{outline:2px solid var(--d14);outline-offset:-2px}
+
+@media (min-width:760px){
+  .screen,.expand{max-width:560px}
+}
+@media (max-width:600px){
+  .printview{padding:14px 8px 60px}
+  .pnote{font-size:11.5px;gap:9px}
+}
+
+.mapname{font-family:"Jua",sans-serif;fill:var(--map-ink);paint-order:stroke;stroke:var(--map-halo);stroke-width:3.4px;stroke-linejoin:round}
+.mapname-sub{font-family:"Jua",sans-serif;fill:var(--map-ink-2)}
+/* ══ 귀여운 일러스트 오버레이 ══ */
+#mapillust{pointer-events:none}
+.hand{font-family:"Jua","IBM Plex Sans KR",sans-serif;fill:#3E5254;paint-order:stroke;stroke:var(--map-halo);stroke-width:3.4px;stroke-linejoin:round}
+.pill-t{font-family:"Jua","IBM Plex Sans KR",sans-serif;fill:var(--map-ink)}
+
+/* ── 어니 안내 ── */
+.intro{max-width:520px;margin:0 auto;padding:26px 18px 10px}
+.intro h1{font-size:24px;letter-spacing:-.01em}
+.intro p{margin:11px 0 0;font-size:14px;line-height:1.75;color:var(--ink-2)}
+.intro p b{color:var(--ink);font-weight:500}
+.how{display:flex;flex-direction:column;gap:9px;margin:18px 0 0}
+.step{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:13px 15px 14px 44px;position:relative;
+}
+.step .no{
+  position:absolute;left:14px;top:13px;width:20px;height:20px;border-radius:50%;
+  background:var(--d13);color:var(--card);font-family:"IBM Plex Mono",monospace;
+  font-size:11px;line-height:20px;text-align:center;
+}
+.step b{display:block;font-size:14px;font-weight:500;color:var(--ink)}
+.step em{display:block;font-style:normal;font-size:12.5px;line-height:1.65;color:var(--ink-3);margin-top:4px}
+.ask{border-top:1px solid var(--line);margin-top:20px!important;padding-top:16px}
+
+/* 건물 블록 — 2D 파스텔 (외곽선은 면색보다 20% 어둡게) */
+.bd{stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
+.r0{fill:var(--r0);stroke:var(--r0e)}.r1{fill:var(--r1);stroke:var(--r1e)}
+.r2{fill:var(--r2);stroke:var(--r2e)}.r3{fill:var(--r3);stroke:var(--r3e)}
+.r4{fill:var(--r4);stroke:var(--r4e)}.r5{fill:var(--r5);stroke:var(--r5e)}
+
+/* 비에이 밭 — 패치워크 3색 */
+.fm{stroke-width:1.2;stroke-linejoin:round}
+.f0{fill:var(--wheat);stroke:var(--wheat-e)}
+.f1{fill:var(--lav);stroke:var(--lav-e)}
+.f2{fill:var(--potato);stroke:var(--potato-e)}
