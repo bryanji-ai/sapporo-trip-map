@@ -30,24 +30,33 @@ function charImg(key, x, y, w, opacity){
     opacity="${opacity == null ? 1 : opacity}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
-/* 지도 구석에 세우는 지역 커플. frac 은 지도 폭 대비 크기. */
-function charCorner(regionKey, W, H, frac, side){
-  const k = CHAR_OF[regionKey];
-  const s = (typeof SPRITES !== 'undefined') && SPRITES[k];
-  if (!s) return '';
-  const w = W * (frac || 0.15);
-  const h = w * s.h / s.w;
-  const x = (side === 'right') ? W - w - W*0.03 : W*0.03;
-  return charImg(k, x, H - h - H*0.03, w);
-}
+/* ══ 빈 구석 고르기 ══════════════════════════════════════════════
+   캐릭터를 구석에 고정해 두면 그 자리에 핀·이름표가 있을 때 가린다.
+   (2026-09-09 삿포로 인쇄 패널에서 니조시장을 덮었다)
+   핀과 랜드마크가 가장 적은 구석을 골라 세운다.
 
+   좌표계는 호출부가 정한다 — 장애물 목록과 상자를 같은 공간으로 넘긴다. */
+function freeCorners(box, w, h, obstacles, n){
+  const [bx, by, bw, bh] = box;
+  const pad  = Math.min(bw, bh) * 0.025;
+  const near = Math.min(bw, bh) * 0.10;      // 이름표가 옆으로 퍼지는 몫
 
-/* 지도 위쪽 반대 구석에 세우는 개별 얼굴 */
-function charTop(regionKey, W, H, frac, side){
-  const k = FACE_OF[regionKey];
-  const s = (typeof SPRITES !== 'undefined') && SPRITES[k];
-  if (!s) return '';
-  const w = W * (frac || 0.12);
-  const x = (side === 'left') ? W*0.03 : W - w - W*0.03;
-  return charImg(k, x, H*0.035, w, 0.95);
+  const cands = [
+    { key:'bl', x: bx + pad,          y: by + bh - h - pad },
+    { key:'br', x: bx + bw - w - pad, y: by + bh - h - pad },
+    { key:'tl', x: bx + pad,          y: by + pad },
+    { key:'tr', x: bx + bw - w - pad, y: by + pad }
+  ];
+  cands.forEach(c => {
+    c.n = 0;
+    for (let i = 0; i < obstacles.length; i++){
+      const o = obstacles[i];
+      if (o[0] > c.x - near && o[0] < c.x + w + near &&
+          o[1] > c.y - near && o[1] < c.y + h + near) c.n++;
+    }
+  });
+  // 빈 곳 우선, 같으면 아래쪽을 먼저 (지도는 위쪽에 이름표가 몰린다)
+  const order = ['bl','br','tl','tr'];
+  cands.sort((a, b) => a.n - b.n || order.indexOf(a.key) - order.indexOf(b.key));
+  return cands.slice(0, n || 1);
 }

@@ -423,7 +423,8 @@ function drawScreen(){
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225) + charTop(R.key, vb[2], vb[3], 0.135);
+  // 캐릭터 둘을 핀이 가장 적은 두 구석에 나눠 세운다 (일러스트 레이어는 원점이 0,0)
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charSpots(R, vs, vb);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -557,6 +558,31 @@ sheet.addEventListener('click', e => {
   sheet.addEventListener('pointerup', end);
   sheet.addEventListener('pointercancel', end);
 })();
+
+/* 지도 탭 캐릭터 — 핀이 비는 두 구석에 소품 커플과 개별 얼굴을 나눠 세운다 */
+function charSpots(R, vs, vb){
+  if (typeof SPRITES === 'undefined') return '';
+  const W = vb[2], H = vb[3];
+  const obs = vs.map(({p}) => { const q = R.px(p.lat, p.lon); return [q[0]-vb[0], q[1]-vb[1]]; })
+    .concat(R.marks.map(m => { const q = R.px(m.lat, m.lon); return [q[0]-vb[0], q[1]-vb[1]]; }));
+
+  const a = SPRITES[CHAR_OF[R.key]], b = SPRITES[FACE_OF[R.key]];
+  if (!a) return '';
+  const aw = W*0.225, ah = aw*a.h/a.w;
+  const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
+  const two = freeCorners([0, 0, W, H], aw, ah, obs, 4);
+  let out = charImg(CHAR_OF[R.key], two[0].x, two[0].y, aw);
+  if (b){
+    // 커플이 선 자리와 겹치지 않는 구석 중 가장 빈 곳
+    const rest = two.slice(1).filter(c =>
+      Math.abs(c.x - two[0].x) > aw*0.5 || Math.abs(c.y - two[0].y) > ah*0.5);
+    const c = rest.length ? rest[0] : two[two.length-1];
+    const cx = (c.x > W/2) ? W - bw2 - W*0.025 : W*0.025;
+    const cy = (c.y > H/2) ? H - bh2 - H*0.025 : H*0.025;
+    out += charImg(FACE_OF[R.key], cx, cy, bw2, 0.95);
+  }
+  return out;
+}
 
 /* ══ 지도 전체 화면 — 인쇄 탭의 지도 패널을 누르면 열린다 ══
    지도를 새로 그리지 않고 지도 탭의 .mapwrap 과 하단 시트를 통째로 옮겨 온다.
@@ -737,12 +763,18 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     pbg.setAttribute('height', (vh*1.04).toFixed(1));
   }
   const psc = Math.max(0.6, bw/430);
-  // 캐릭터는 사진 카드 반대편 아래 구석 — 카드나 라벨을 가리지 않게
+  // 캐릭터는 핀·이름표가 가장 적은 구석에 세운다 (고정하면 니조시장처럼 가린다)
   const chW = bw * 0.245;
   const chS = (typeof SPRITES !== 'undefined') && SPRITES[CHAR_OF[R.key]];
   const chH = chS ? chW * chS.h / chS.w : 0;
-  const chX = side === 'L' ? bx + bw - chW - bw*0.02 : bx + bw*0.02;
-  const char = chS ? charImg(CHAR_OF[R.key], chX, by + bh - chH - bh*0.02, chW) : '';
+  let char = '';
+  if (chS){
+    const obs = spots.map(o => [o.x, o.y])
+      .concat(R.marks.map(m => R.px(m.lat, m.lon)))
+      .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
+    const c = freeCorners([bx, by, bw, bh], chW, chH, obs, 1)[0];
+    char = charImg(CHAR_OF[R.key], c.x, c.y, chW);
+  }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
   const panelEl = overEl.closest('.p-panel');
