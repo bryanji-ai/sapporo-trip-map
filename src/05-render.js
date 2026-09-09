@@ -185,12 +185,165 @@ function closeGallery(){
    지도 패널은 그 지역 지도를 전체 화면으로,
    그 밖의 포스터 여백은 전체 갤러리를 연다 */
 document.getElementById('printview').addEventListener('click', e => {
+  if (e.target.closest('#pvAll')){ openPosterView(null); return; }
   const im = e.target.closest('image[data-pi]');
   if (im){ openPlacePhotos(+im.dataset.pi); return; }
   const panel = e.target.closest('.p-panel[data-region]');
-  if (panel){ openMapFullscreen(panel.dataset.region); return; }
+  // 🔴 예전에는 지도 탭의 지도를 통째로 옮겨 와서(openMapFullscreen) 두 탭이 같아 보였다.
+  //    인쇄 탭에서는 「대표 사진이 붙은 인쇄본」을 그대로 크게 보여준다. (2026-09-09)
+  if (panel){ openPosterView(panel.dataset.region); return; }
   if (e.target.closest('.poster')) openGallery();
 });
+
+
+/* ══ 인쇄본 크게 보기 — 확대·이동 ══════════════════════════════
+   지도 탭을 끌어오지 않는다. 인쇄 탭에 이미 그려진 패널(대표 사진·연결선까지)을
+   그대로 옮겨 와 확대해 본다. 지역 하나만(key) 또는 세 지역 전체(null).
+   복제하지 않고 「옮겼다가 되돌린다」 — clipPath·그라데이션 id 가 겹치면 원본이 깨진다. */
+let pvNode = null;
+
+function openPosterView(key){
+  if (pvNode) return;
+  const src = key ? document.querySelector(`.p-panel[data-region="${key}"]`)
+                  : document.querySelector('.poster');
+  if (!src) return;
+
+  const pv = document.createElement('div');
+  pv.className = 'poster-view' + (key ? ' one' : ' all');
+  pv.setAttribute('role', 'dialog');
+  pv.setAttribute('aria-label', key ? '지도 크게 보기' : '인쇄본 크게 보기');
+  pv.innerHTML =
+      `<div class="pv-bar">
+         <span class="pv-title">${key ? (REGIONS[key] ? REGIONS[key].name || key : key) : '인쇄본 전체'}</span>
+         <button class="pv-zoom" data-z="out" aria-label="축소">−</button>
+         <button class="pv-zoom" data-z="reset" aria-label="원래 크기">100%</button>
+         <button class="pv-zoom" data-z="in" aria-label="확대">＋</button>
+         <button class="pv-close" aria-label="닫기">✕</button>
+       </div>
+       <div class="pv-wrap"><div class="pv-stage"></div></div>
+       <p class="pv-hint">두 손가락으로 확대 · 끌어서 이동 · 두 번 누르면 확대/축소</p>`;
+  document.body.appendChild(pv);
+
+  pv._at = [src.parentNode, src.nextSibling];
+  pv._src = src;
+  pv.querySelector('.pv-stage').appendChild(src);
+
+  pv._prevOv = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';
+
+  pv._key = e => {
+    if (e.key !== 'Escape' || lbNode) return;
+    e.stopPropagation(); closePosterView();
+  };
+  document.addEventListener('keydown', pv._key, true);
+  pv.querySelector('.pv-close').addEventListener('click', closePosterView);
+  pv.addEventListener('click', e => {
+    const z = e.target.closest('.pv-zoom');
+    if (z){ zoomBy(z.dataset.z); return; }
+    if (pv._moved) return;                       // 끌고 나서의 클릭은 무시
+    const im = e.target.closest('image[data-pi]');
+    if (im) openPlacePhotos(+im.dataset.pi);
+  });
+
+  pvNode = pv;
+  setupPanZoom(pv);
+  // 새 상자 크기에 맞춰 다시 잰다 — 한 지역만 열어도 레터박스가 안 생기게
+  requestAnimationFrame(posterRefresh);
+}
+
+function closePosterView(){
+  if (!pvNode) return;
+  const pv = pvNode; pvNode = null;
+  closeLightbox();
+  document.removeEventListener('keydown', pv._key, true);
+  document.documentElement.style.overflow = pv._prevOv;
+  pv._at[0].insertBefore(pv._src, pv._at[1]);
+  pv.remove();
+  posterRefresh();                               // 원래 상자 크기로 다시 잰다
+}
+
+/* 확대·이동 — 휠·핀치·드래그·더블탭 */
+let PV = { s:1, x:0, y:0 };
+function pvApply(){
+  if (!pvNode) return;
+  const st = pvNode.querySelector('.pv-stage');
+  st.style.transform = `translate(${PV.x}px,${PV.y}px) scale(${PV.s})`;
+  const b = pvNode.querySelector('.pv-zoom[data-z="reset"]');
+  if (b) b.textContent = Math.round(PV.s*100) + '%';
+}
+function pvClamp(){ PV.s = Math.min(6, Math.max(0.5, PV.s)); }
+function zoomBy(kind){
+  if (kind === 'reset'){ PV = {s:1,x:0,y:0}; }
+  else { PV.s *= (kind === 'in' ? 1.35 : 1/1.35); pvClamp(); }
+  pvApply();
+}
+
+function setupPanZoom(pv){
+  PV = { s:1, x:0, y:0 }; pvApply();
+  const wrap = pv.querySelector('.pv-wrap');
+  const pts = new Map();
+  let start = null, lastTap = 0;
+
+  /* 손가락 한 개면 그 점, 두 개면 가운데 점과 두 점 사이 거리 */
+  function gesture(){
+    const a = [...pts.values()];
+    if (!a.length) return null;
+    if (a.length === 1) return { cx:a[0].x, cy:a[0].y, d:0 };
+    return { cx:(a[0].x+a[1].x)/2, cy:(a[0].y+a[1].y)/2,
+             d: Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y) };
+  }
+  function anchor(){
+    const g = gesture();
+    if (!g) return;
+    start = { cx:g.cx, cy:g.cy, d:g.d, s:PV.s, x:PV.x, y:PV.y };
+  }
+
+  wrap.addEventListener('pointerdown', e => {
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pts.size === 1) pv._moved = false;
+    anchor();
+    wrap.setPointerCapture(e.pointerId);
+  });
+
+  wrap.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !start) return;
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    const g = gesture();
+    if (!g) return;
+
+    if (pts.size >= 2 && start.d > 0){
+      PV.s = start.s * (g.d / start.d);
+      pvClamp();
+    }
+    PV.x = start.x + (g.cx - start.cx);
+    PV.y = start.y + (g.cy - start.cy);
+
+    if (Math.abs(g.cx - start.cx) > 4 || Math.abs(g.cy - start.cy) > 4) pv._moved = true;
+    pvApply();
+    e.preventDefault();
+  }, {passive:false});
+
+  function up(e){
+    pts.delete(e.pointerId);
+    if (pts.size){ anchor(); return; }
+    start = null;
+    const now = Date.now();
+    if (!pv._moved && now - lastTap < 320){        // 두 번 누르면 확대/축소
+      PV.s = PV.s > 1.6 ? 1 : 2.4; PV.x = PV.y = 0; pvApply();
+      lastTap = 0;
+      return;
+    }
+    lastTap = now;
+  }
+  wrap.addEventListener('pointerup', up);
+  wrap.addEventListener('pointercancel', up);
+
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    PV.s *= (e.deltaY < 0 ? 1.12 : 1/1.12); pvClamp(); pvApply();
+  }, {passive:false});
+}
+
 
 /* 지도 탭 — 핀을 눌러 열린 시트의 썸네일 (별표·「모두 보기」 버튼은 그대로 둔다) */
 document.getElementById('sheet').addEventListener('click', e => {
@@ -565,12 +718,28 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
   });
 
   const vx = side==='L' ? bx - M : bx;
-  const pvb = `${vx.toFixed(1)} ${(by-bh*0.02).toFixed(1)} ${(bw+M).toFixed(1)} ${(bh*1.04).toFixed(1)}`;
+  const vy = by - bh*0.02, vw = bw + M, vh = bh*1.04;
+  const pvb = `${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`;
   baseEl.setAttribute('viewBox', pvb); overEl.setAttribute('viewBox', pvb);
-  if (baseEl.dataset.g !== R.key){ baseEl.innerHTML = terrainOf(R); baseEl.dataset.g = R.key; }
+  // 🔴 사진 카드가 놓이는 여백(M)은 지형 데이터 밖이라, 지도가 좁은 지역(비에이)에서는
+  //    그 자리에 페이지 배경이 그대로 비쳤다. 뷰박스 전체를 덮는 땅 색을 맨 아래 깔아
+  //    카드가 언제나 「지도 안」에 놓이게 한다. (2026-09-09)
+  if (baseEl.dataset.g !== R.key){
+    baseEl.innerHTML = `<rect class="pbg" fill="url(#bm-land)"/>` + terrainOf(R);
+    baseEl.dataset.g = R.key;
+  }
+  const pbg = baseEl.querySelector('.pbg');
+  if (pbg){
+    pbg.setAttribute('x', (vx - vw*0.02).toFixed(1));
+    pbg.setAttribute('y', (vy - vh*0.02).toFixed(1));
+    pbg.setAttribute('width',  (vw*1.04).toFixed(1));
+    pbg.setAttribute('height', (vh*1.04).toFixed(1));
+  }
   const psc = Math.max(0.6, bw/430);
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
+  const panelEl = overEl.closest('.p-panel');
+  if (panelEl) panelEl.dataset.cards = side;      // 힌트를 카드 반대편에 둔다
   return spots;
 }
 

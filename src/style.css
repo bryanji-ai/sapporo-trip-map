@@ -519,6 +519,8 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-size:22px;opacity:.55;pointer-events:none;
   animation:tap-pulse 2s ease-in-out infinite;
 }
+/* 사진 카드가 선 쪽 반대편에 둔다 — 카드를 가리지 않도록 */
+.p-panel[data-cards="R"]::after{right:auto;left:10px}
 .p-panel{position:relative;cursor:zoom-in;}
 @keyframes tap-pulse{
   0%,100%{transform:scale(1);opacity:.55}
@@ -532,3 +534,69 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 /* 전체 화면 안으로 옮겨 온 시트는 지도 위에 뜬다 — 힌트 줄까지 덮는다 */
 .map-fullscreen .sheet{z-index:40}
 @media print{.map-fullscreen{display:none!important}}
+
+
+/* ══ 인쇄본 크게 보기 ══════════════════════════════════════════
+   인쇄 탭에 이미 그려진 패널을 그대로 옮겨 와 확대해 본다.
+   모바일에서 세 지역이 한 화면에 들어가면 글씨가 안 보이므로 확대·이동을 붙였다. */
+.pv-all{
+  font:inherit;font-size:12.5px;font-weight:500;
+  padding:6px 13px;border-radius:999px;cursor:pointer;
+  background:var(--go,#1E9AA6);color:#fff;border:0;
+}
+.pv-all:hover{filter:brightness(1.06)}
+.pv-all:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+.poster-view{
+  position:fixed;inset:0;z-index:60;
+  background:var(--paper,#F7F0DE);
+  display:flex;flex-direction:column;
+  overscroll-behavior:contain;
+}
+.pv-bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:calc(9px + env(safe-area-inset-top)) 12px 9px;
+  border-bottom:1px solid var(--line,#E6D8BF);
+  background:var(--card,#FDF8EC);
+}
+.pv-title{
+  font-family:"Jua",sans-serif;font-size:15px;margin-right:auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.pv-zoom,.pv-close{
+  flex:0 0 auto;font:inherit;font-size:13px;min-width:34px;
+  padding:6px 10px;border-radius:999px;cursor:pointer;
+  background:var(--paper,#F7F0DE);color:var(--ink,#3A3026);
+  border:1px solid var(--line,#E6D8BF);
+}
+.pv-zoom[data-z="reset"]{font-family:"IBM Plex Mono",monospace;font-size:11.5px;min-width:52px}
+.pv-zoom:hover,.pv-close:hover{border-color:var(--ink-3,#9C8B74)}
+.pv-zoom:focus-visible,.pv-close:focus-visible{outline:2px solid var(--go,#1E9AA6);outline-offset:2px}
+
+.pv-wrap{
+  flex:1 1 auto;min-height:0;position:relative;overflow:hidden;
+  touch-action:none;cursor:grab;
+}
+.pv-wrap:active{cursor:grabbing}
+.pv-stage{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  transform-origin:50% 50%;
+  will-change:transform;
+}
+/* 옮겨 온 포스터·패널이 화면을 채우게 */
+.pv-stage > .poster{width:100%;height:100%;margin:0;border:0;box-shadow:none;background:transparent}
+.pv-stage > .p-panel{width:100%;height:100%}
+.pv-stage .p-panel{cursor:default}
+.pv-stage .p-panel::after{display:none}      /* 안내 손가락은 여기선 불필요 */
+.pv-stage .p-map{height:100%}
+.pv-stage svg{width:100%;height:100%}
+
+.pv-hint{
+  flex:0 0 auto;margin:0;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom));
+  text-align:center;font-size:12px;color:var(--ink-3,#9C8B74);
+  background:var(--card,#FDF8EC);border-top:1px solid var(--line,#E6D8BF);
+  pointer-events:none;
+}
+@media print{.poster-view{display:none!important}}
