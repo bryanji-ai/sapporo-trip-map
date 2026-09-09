@@ -4,7 +4,18 @@
    ══════════════════════════════════════════════════════════════ */
 
 /* 지역마다 어울리는 컷 */
-const CHAR_OF = { sapporo:'ramen', otaru:'scarf', biei:'hat' };
+/* 9월 중순 홋카이도는 초가을이다 — 목도리·눈 컷은 쓰지 않는다.
+   오타루는 계절색이 없는 기본 커플로 둔다. */
+const CHAR_OF = { sapporo:'ramen', otaru:'couple', biei:'hat' };
+
+/* 날짜별로 돌려 쓰는 표정 — 펼쳐보기 머리글에 붙는다 */
+const FACE_CYCLE = ['erni-a','hooni-a','erni-b','hooni-b','erni-d','hooni-d','erni-c','hooni-c'];
+
+/* <img> 태그로 쓸 data URI */
+function charSrc(key){
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[key];
+  return s ? `data:${s.mime};base64,${s.b64}` : '';
+}
 
 /* 좌상단 (x,y) 에 폭 w 로 그린다. 높이는 원본 비율대로. */
 function charImg(key, x, y, w, opacity){

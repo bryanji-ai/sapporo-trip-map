@@ -12,6 +12,42 @@ function snowflake(x,y,r,o){
     <path d="M0,${f1(-r*.55)} l${f1(-r*.3)},${f1(-r*.3)} M0,${f1(-r*.55)} l${f1(r*.3)},${f1(-r*.3)}
              M0,${f1(r*.55)} l${f1(-r*.3)},${f1(r*.3)} M0,${f1(r*.55)} l${f1(r*.3)},${f1(r*.3)}"/></g>`;
 }
+/* ── 단풍잎 — 9월 홋카이도. 눈꽃 자리를 대신한다 (5갈래) ── */
+function maple(x,y,r,o,col){
+  const c = col || '#D2603A';
+  const P = [];                                   // 5갈래 + 사이 골
+  const tips = [-Math.PI/2, -Math.PI/2-1.05, -Math.PI/2-2.05, -Math.PI/2+1.05, -Math.PI/2+2.05];
+  const order = [tips[2], tips[1], tips[0], tips[3], tips[4]];
+  order.forEach((a,k) => {
+    P.push([Math.cos(a)*r, Math.sin(a)*r]);        // 갈래 끝
+    if (k < order.length-1){                       // 갈래 사이 골
+      const b = (a + order[k+1])/2;
+      P.push([Math.cos(b)*r*0.34, Math.sin(b)*r*0.34]);
+    }
+  });
+  const d = 'M' + P.map(([px,py]) => `${f1(px)},${f1(py)}`).join(' L') + ` L0,${f1(r*.42)} Z`;
+  return `<g transform="translate(${f1(x)},${f1(y)})" opacity="${o}">
+    <path d="${d}" fill="${c}" stroke="${IK}" stroke-width="${f1(r*.12)}" stroke-linejoin="round"/>
+    <path d="M0,${f1(r*.95)} L0,${f1(r*.2)}" stroke="${IK}" stroke-width="${f1(r*.12)}" stroke-linecap="round" fill="none"/>
+  </g>`;
+}
+
+/* ── 구운 옥수수 — 오텀페스트(9/11~10/3 오도리공원)의 얼굴 ── */
+function corn(k){
+  return `<g>
+    <ellipse cx="0" cy="${-9*k}" rx="${4.6*k}" ry="${11*k}" fill="#F0C24B" stroke="${IK}" stroke-width="${1.5*k}"/>
+    <path d="M${-2.4*k},${-17*k} v${15*k} M0,${-18*k} v${16*k} M${2.4*k},${-17*k} v${15*k}"
+          stroke="#C99A2E" stroke-width="${1.1*k}" stroke-linecap="round" fill="none"/>
+    <path d="M${-4.4*k},${-13*k} h${8.8*k} M${-4.6*k},${-8*k} h${9.2*k} M${-4.2*k},${-3*k} h${8.4*k}"
+          stroke="#C99A2E" stroke-width="${0.9*k}" fill="none"/>
+    <path d="M${-4*k},${-3*k} q${-6*k},${2*k} ${-7*k},${8*k} q${5*k},${-1*k} ${7*k},${-5*k} Z"
+          fill="#8FB56A" stroke="${IK}" stroke-width="${1.3*k}" stroke-linejoin="round"/>
+    <path d="M${4*k},${-3*k} q${6*k},${2*k} ${7*k},${8*k} q${-5*k},${-1*k} ${-7*k},${-5*k} Z"
+          fill="#7FA65D" stroke="${IK}" stroke-width="${1.3*k}" stroke-linejoin="round"/>
+    <path d="M0,${-1*k} v${4*k}" stroke="${IK}" stroke-width="${1.4*k}" stroke-linecap="round"/>
+  </g>`;
+}
+
 function heart(x,y,r,c){
   return `<path transform="translate(${f1(x)},${f1(y)})" fill="${c}"
     d="M0,${f1(r*.85)} C${f1(-r*1.5)},${f1(-r*.1)} ${f1(-r*.85)},${f1(-r*1.3)} 0,${f1(-r*.45)}

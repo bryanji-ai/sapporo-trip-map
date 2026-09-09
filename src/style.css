@@ -608,3 +608,15 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   margin-bottom:-.4cqw;
 }
 @media (max-width:640px){ .p-couple{height:7.4cqw} }
+
+
+/* ── 곳곳에 놓는 캐릭터 ── */
+.daybar{position:relative}
+.dayface{
+  height:34px;width:auto;flex:0 0 auto;margin:-6px -2px -6px 6px;
+  pointer-events:none;
+}
+.ex-empty{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.ex-empty p{margin:0}
+.empty-couple{width:min(210px,52%);height:auto;opacity:.92}
+@media (max-width:600px){ .dayface{height:30px} }

@@ -787,18 +787,23 @@ function stampPosterDays(){
 function buildExpand(){
   if (!isLive){
     document.getElementById('exbody').innerHTML =
-      `<p class="ex-empty">드라이브에 사진을 올리면 여기에 여행 기록이 채워져요 📸</p>`;
+      `<div class="ex-empty">${charSrc('couple') ? `<img class="empty-couple" src="${charSrc('couple')}" alt="" aria-hidden="true">` : ''}
+         <p>드라이브에 사진을 올리면 여기에 여행 기록이 채워져요</p></div>`;
     return;
   }
   let html = '';
-  DAYS.forEach(d => {
+  DAYS.forEach((d, di) => {
     const list = PLACES.map((p,i)=>({p,i})).filter(o => o.p.d === d.id)
       .sort((x,y) => x.p.t.localeCompare(y.p.t));
     if (!list.length) return;
     const c = `var(${d.c})`;
+    // 날짜마다 표정 하나씩 — 원본 그림에서 오려 낸 얼굴을 돌려 쓴다
+    const faceKey = FACE_CYCLE[di % FACE_CYCLE.length];
+    const faceSrc = charSrc(faceKey);
     html += `<section class="daysec"><div class="daybar">
         <i style="background:${c}"></i><b>${d.label}</b><span>${d.note}</span>
-        <em>${list.length}곳 · 사진 ${list.reduce((a,o)=>a+o.p.ph,0)}</em></div>`;
+        <em>${list.length}곳 · 사진 ${list.reduce((a,o)=>a+o.p.ph,0)}</em>
+        ${faceSrc ? `<img class="dayface" src="${faceSrc}" alt="" aria-hidden="true">` : ''}</div>`;
     list.forEach(({p,i}) => {
       const shown = Math.min(p.ph, 6);
       let ph = '';
@@ -815,7 +820,8 @@ function buildExpand(){
     html += `</section>`;
   });
   document.getElementById('exbody').innerHTML =
-    html || `<p class="ex-empty">아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p>`;
+    html || `<div class="ex-empty">${charSrc('couple') ? `<img class="empty-couple" src="${charSrc('couple')}" alt="" aria-hidden="true">` : ''}
+       <p>아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p></div>`;
 }
 
 /* ══════════ 탭 ══════════ */
