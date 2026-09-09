@@ -199,27 +199,55 @@ document.getElementById('printview').addEventListener('click', e => {
 /* ══ 캐릭터 끌어서 옮기기 ══════════════════════════════════════
    SVG 안이라 화면 좌표를 뷰박스 좌표로 바꿔야 한다.
    놓으면 상자 대비 0~1 비율로 저장해 두 사람이 같은 자리를 본다.
-   두 번 누르면 자동 배치로 되돌린다. */
-(function charDrag(){
-  let cur = null;
+   두 번 누르면 자동 배치로 되돌린다.
 
-  function toUser(svg, ev){
+   🔴 모바일에서 안 되던 이유 (2026-09-09)
+      image.charmove 에 touch-action:none 을 써 두었지만 **SVG 자식 요소에는 touch-action 이
+      먹지 않는다** — 브라우저는 CSS 박스를 만드는 요소에만 이 값을 본다. 그래서 손가락을
+      대면 브라우저가 「페이지를 미는 중」으로 보고 첫 이동에서 포인터를 가져가며
+      pointercancel 을 던졌고, 그게 drop() 을 불러 드래그가 시작하자마자 끝났다.
+      (헤드리스 크롬 터치 재현: pointerdown → touchstart → touchmove → pointercancel)
+
+      고친 방법 세 가지
+      ① 캐릭터 위에서 시작한 touchstart 를 non-passive 로 받아 preventDefault 한다.
+         touch-action 과 달리 이건 SVG 에서도 확실히 듣는다.
+      ② 포인터 이벤트가 오다 말아도 끌리도록 알맹이(begin/drag/end)를 입력 종류와 분리했다.
+         먼저 잡은 쪽(pointer 또는 touch)이 끝까지 끌고, 손가락이 다 떨어지면 반드시 끝난다.
+      ③ touchstart 를 막으면 iOS 의 「이미지 저장」 팝업과 함께 dblclick 도 오지 않으므로
+         두 번 탭은 여기서 직접 센다. 탭의 미세한 흔들림(4px)은 이동으로 치지 않는다. */
+(function charDrag(){
+  const SLOP   = 4;               // 이만큼 움직여야 「끄는 중」으로 본다 (탭 흔들림 무시)
+  const TAP_MS = 320;             // 두 번 탭으로 인정하는 간격
+  let cur = null;                 // 지금 끌고 있는 캐릭터 — 한 번에 하나만
+  let raf = 0;
+  let lastTap = { t: 0, key: '' };
+  let lastReset = 0;
+
+  function charAt(t){ return t && t.closest ? t.closest('image.charmove') : null; }
+
+  function toUser(svg, x, y){
     const m = svg.getScreenCTM();
     if (!m) return null;
     const p = svg.createSVGPoint();
-    p.x = ev.clientX; p.y = ev.clientY;
+    p.x = x; p.y = y;
     return p.matrixTransform(m.inverse());
   }
 
-  document.addEventListener('pointerdown', e => {
-    const im = e.target.closest('image.charmove');
-    if (!im) return;
+  function pick(list, id){
+    for (const t of list) if (id == null || t.identifier === id) return t;
+    return null;
+  }
+
+  /* ── 입력 종류와 상관없는 알맹이 ── */
+  function begin(im, x, y, opt){
+    if (cur) return false;                       // 두 번째 손가락은 무시한다
     const svg = im.ownerSVGElement;
-    const q = toUser(svg, e);
-    if (!q) return;
-    e.preventDefault(); e.stopPropagation();
+    if (!svg) return false;
+    const q = toUser(svg, x, y);
+    if (!q) return false;
     cur = {
-      im: im, svg: svg, moved: false,
+      im: im, svg: svg, id: opt.id, src: opt.src, touch: opt.touch,
+      moved: false, sx: x, sy: y,
       dx: q.x - parseFloat(im.getAttribute('x')),
       dy: q.y - parseFloat(im.getAttribute('y')),
       w: parseFloat(im.dataset.w), h: parseFloat(im.dataset.h),
@@ -227,59 +255,125 @@ document.getElementById('printview').addEventListener('click', e => {
       bw: parseFloat(im.dataset.bw), bh: parseFloat(im.dataset.bh)
     };
     im.classList.add('dragging');
-    try { im.setPointerCapture(e.pointerId); } catch (_) {}
-    document.addEventListener('pointermove', move, true);
-  }, true);
+    /* 🔴 예전에는 document 에 pointermove 를 늘 걸어 두었다 — 지도를 밀 때마다 손가락 좌표를
+          SVG 좌표로 바꾸는 계산이 따라붙어 스크롤이 걸렸다. 끌기 시작할 때만 붙인다. */
+    document.addEventListener('pointermove',  onPointerMove, true);
+    document.addEventListener('touchmove',    onTouchMove,   { passive:false, capture:true });
+    document.addEventListener('touchend',     onTouchEnd,    true);
+    document.addEventListener('touchcancel',  onTouchEnd,    true);
+    return true;
+  }
 
-  /* 🔴 예전에는 document 에 pointermove 를 늘 걸어 두었다 — 지도를 밀 때마다 손가락 좌표를
-        SVG 좌표로 바꾸는 계산이 따라붙어 스크롤이 걸렸다. 끌기 시작할 때만 붙인다.
-        옮긴 자리는 프레임마다 한 번(rAF)만 반영한다 — 이벤트가 프레임보다 자주 온다. (2026-09-09) */
-  let raf = 0;
-  function move(e){
+  function drag(x, y){
     if (!cur) return;
-    const q = toUser(cur.svg, e);
+    if (!cur.moved && Math.hypot(x - cur.sx, y - cur.sy) < SLOP) return;
+    const q = toUser(cur.svg, x, y);
     if (!q) return;
     cur.at = [Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx)),
               Math.max(cur.by, Math.min(cur.by + cur.bh - cur.h, q.y - cur.dy))];
     cur.moved = true;
-    if (!raf) raf = requestAnimationFrame(paint);
-    e.preventDefault(); e.stopPropagation();
-  }
-  function paint(){
-    raf = 0;
-    if (!cur || !cur.at) return;
-    cur.im.setAttribute('x', cur.at[0].toFixed(1));
-    cur.im.setAttribute('y', cur.at[1].toFixed(1));
+    if (!raf) raf = requestAnimationFrame(paint);   // 옮긴 자리는 프레임마다 한 번만 반영
   }
 
-  function drop(e){
+  function apply(c){
+    if (!c || !c.at) return;
+    c.im.setAttribute('x', c.at[0].toFixed(1));
+    c.im.setAttribute('y', c.at[1].toFixed(1));
+  }
+  function paint(){ raf = 0; apply(cur); }
+
+  function end(e){
     if (!cur) return;
-    document.removeEventListener('pointermove', move, true);
+    const c = cur; cur = null;                      // 되불려도 한 번만 끝나게
+    document.removeEventListener('pointermove', onPointerMove, true);
+    document.removeEventListener('touchmove',   onTouchMove,   true);
+    document.removeEventListener('touchend',    onTouchEnd,    true);
+    document.removeEventListener('touchcancel', onTouchEnd,    true);
     if (raf){ cancelAnimationFrame(raf); raf = 0; }
-    paint();                                   // 마지막 좌표를 놓치지 않게 바로 반영
-    const im = cur.im;
-    im.classList.remove('dragging');
-    if (cur.moved){
-      const x = parseFloat(im.getAttribute('x')), y = parseFloat(im.getAttribute('y'));
-      const fx = cur.bw - cur.w > 0 ? (x - cur.bx) / (cur.bw - cur.w) : 0;
-      const fy = cur.bh - cur.h > 0 ? (y - cur.by) / (cur.bh - cur.h) : 0;
-      saveCharPos(im.dataset.ck, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
-      toast('자리를 저장했어요 · 두 번 누르면 자동으로');
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-    }
-    cur = null;
-  }
-  document.addEventListener('pointerup', drop, false);
-  document.addEventListener('pointercancel', drop, false);
+    apply(c);                                       // 마지막 좌표를 놓치지 않게 바로 반영
+    c.im.classList.remove('dragging');
+    try { c.im.releasePointerCapture(c.id); } catch (_) {}
 
-  /* 두 번 누르면 자동 배치로 */
-  document.addEventListener('dblclick', e => {
-    const im = e.target.closest('image.charmove');
-    if (!im) return;
-    e.preventDefault(); e.stopPropagation();
+    if (c.moved){
+      const x = parseFloat(c.im.getAttribute('x')), y = parseFloat(c.im.getAttribute('y'));
+      const fx = c.bw - c.w > 0 ? (x - c.bx) / (c.bw - c.w) : 0;
+      const fy = c.bh - c.h > 0 ? (y - c.by) / (c.bh - c.h) : 0;
+      saveCharPos(c.im.dataset.ck, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
+      toast('자리를 저장했어요 · 두 번 누르면 자동으로');
+      if (e){ e.preventDefault(); e.stopPropagation(); }
+    } else if (c.touch){
+      // 터치에는 dblclick 이 오지 않는다 — 두 번 탭을 여기서 센다
+      const now = Date.now(), k = c.im.dataset.ck;
+      if (now - lastTap.t < TAP_MS && lastTap.key === k){
+        lastTap = { t:0, key:'' };
+        resetAuto(c.im);
+      } else {
+        lastTap = { t: now, key: k };
+      }
+    }
+  }
+
+  function resetAuto(im){
+    if (Date.now() - lastReset < 400) return;   // 두 번 탭과 dblclick 이 겹쳐 와도 한 번만
+    lastReset = Date.now();
     saveCharPos(im.dataset.ck, null);
     toast('자동 배치로 되돌렸어요');
     if (TABS.print[1].classList.contains('on')) posterRefresh(); else drawScreen();
+  }
+
+  /* ── 포인터 이벤트 ── */
+  document.addEventListener('pointerdown', e => {
+    const im = charAt(e.target);
+    if (!im) return;
+    if (!begin(im, e.clientX, e.clientY,
+               { id: e.pointerId, src: 'pointer', touch: e.pointerType !== 'mouse' })) return;
+    e.preventDefault(); e.stopPropagation();      // 지도·인쇄본의 팬/줌이 같이 반응하지 않게
+    try { im.setPointerCapture(e.pointerId); } catch (_) {}
+  }, true);
+
+  function onPointerMove(e){
+    if (!cur || cur.src !== 'pointer' || e.pointerId !== cur.id) return;
+    drag(e.clientX, e.clientY);
+    e.preventDefault(); e.stopPropagation();
+  }
+  function onPointerEnd(e){
+    if (!cur || cur.src !== 'pointer' || e.pointerId !== cur.id) return;
+    end(e);
+  }
+  document.addEventListener('pointerup',     onPointerEnd, true);
+  document.addEventListener('pointercancel', onPointerEnd, true);
+
+  /* ── 터치 이벤트 — SVG 에 touch-action 이 안 먹는 걸 여기서 메운다 ── */
+  document.addEventListener('touchstart', e => {
+    const im = charAt(e.target);
+    if (!im) return;
+    // ★ 이 한 줄이 모바일 드래그의 핵심이다. 막지 않으면 브라우저가 스크롤로
+    //   제스처를 가져가며 pointercancel 을 던져 드래그가 죽는다.
+    if (e.cancelable) e.preventDefault();
+    if (cur) return;                              // pointerdown 이 이미 잡았다
+    const t = e.changedTouches[0];
+    if (t) begin(im, t.clientX, t.clientY, { id: t.identifier, src: 'touch', touch: true });
+  }, { passive:false, capture:true });
+
+  function onTouchMove(e){
+    if (!cur) return;
+    if (e.cancelable) e.preventDefault();          // 끄는 동안 페이지가 따라 움직이지 않게
+    if (cur.src !== 'touch') return;               // 좌표는 pointermove 가 이미 대고 있다
+    const t = pick(e.changedTouches, cur.id);
+    if (t) drag(t.clientX, t.clientY);
+  }
+  function onTouchEnd(e){
+    if (!cur) return;
+    if (e.touches && e.touches.length) return;     // 아직 남은 손가락이 있다
+    end(e);                                        // pointerup 이 안 와도 여기서 반드시 끝난다
+  }
+
+  /* 두 번 누르면 자동 배치로 (마우스) */
+  document.addEventListener('dblclick', e => {
+    const im = charAt(e.target);
+    if (!im) return;
+    e.preventDefault(); e.stopPropagation();
+    resetAuto(im);
   }, true);
 
   function toast(msg){

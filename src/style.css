@@ -638,7 +638,15 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 
 
 /* ── 캐릭터 끌어 옮기기 ── */
-image.charmove{ pointer-events:auto; cursor:grab; touch-action:none; }
+/* 🔴 touch-action 은 SVG 자식 요소에 먹지 않는다 — 브라우저가 CSS 박스를 만드는
+      요소에만 적용하기 때문이다. 모바일에서 스크롤이 제스처를 가져가는 건
+      05-render.js 의 touchstart preventDefault 로 막는다. 아래 touch-action 은
+      언젠가 브라우저가 지원할 때를 위한 보험. (2026-09-09) */
+image.charmove{
+  pointer-events:auto; cursor:grab; touch-action:none;
+  -webkit-user-select:none; user-select:none;
+  -webkit-touch-callout:none;      /* iOS 길게 누르기 「이미지 저장」 팝업이 드래그를 끊는다 */
+}
 image.charmove:hover{ filter:drop-shadow(0 2px 6px rgba(38,58,61,.28)); }
 image.charmove.dragging{ cursor:grabbing; opacity:.85 !important; }
 .char-toast{
