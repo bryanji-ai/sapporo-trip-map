@@ -14,11 +14,13 @@ const CHAR_OF = { sapporo:'cp-guide', otaru:'couple', biei:'hat' };
 const FACE_OF = { sapporo:'hooni-a', otaru:'erni-b', biei:'erni-d' };
 
 /* 지역마다 곁들이는 소품 커플들 — 그 지역에서 할 일이 그림으로 보이게 한다.
-   여기도 초가을 컷만 쓴다 (눈꽃 타워·눈사람 컷은 아예 오려 오지 않았다). */
+   여기도 초가을 컷만 쓴다 (눈꽃 타워·눈사람 컷은 아예 오려 오지 않았다).
+   앞의 두 컷은 인쇄 패널에도 그대로 실린다 (05-render.js 에서 slice(0,2)) —
+   그 지역을 한 장으로 대표하는 컷을 앞에 둔다. */
 const EXTRA_CHARS = {
-  sapporo: ['cp-ramen', 'cp-beer', 'cp-susukino'],
-  otaru:   ['cp-yakiniku', 'cp-icecream'],
-  biei:    ['cp-autumn'],
+  sapporo: ['cp-ramen', 'cp-beer', 'cp-susukino', 'cp-night', 'cp-onsen'],
+  otaru:   ['cp-yakiniku', 'cp-icecream', 'cp-parfait'],
+  biei:    ['cp-autumn', 'cp-fall-hat', 'cp-lavender', 'cp-camera'],
 };
 
 /* 날짜별로 돌려 쓰는 표정 — 펼쳐보기 머리글에 붙는다 */

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1788874798130,
+  "lastScanned": 1788993696705,
   "projectRoot": "/Users/seunghunji/sapporo-trip-map",
   "techStack": {
     "languages": [],
@@ -25,110 +25,52 @@
     "isMonorepo": false,
     "workspaces": [],
     "mainDirectories": [
+      "assets",
       "src"
     ],
     "gitBranches": null
   },
   "customNotes": [],
   "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1788993696689,
+      "keyFiles": []
+    },
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 7,
-      "lastAccessed": 1788874798097,
+      "fileCount": 9,
+      "lastAccessed": 1788993696690,
       "keyFiles": [
+        "00-chars.js",
         "01-data.js",
         "02-art.js",
         "03-terrain.js",
-        "04-illust.js",
-        "05-render.js"
+        "04-illust.js"
       ]
     },
     "tools": {
       "path": "tools",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1788874798098,
+      "fileCount": 10,
+      "lastAccessed": 1788993696690,
       "keyFiles": [
         "biei.json",
         "biei_dem.json",
         "build.py",
-        "fetch_dem.py",
-        "fetch_osm.py"
+        "check-collisions.py",
+        "cut_chars.py"
       ]
     }
   },
   "hotPaths": [
     {
-      "path": "src/05-render.js",
-      "accessCount": 13,
-      "lastAccessed": 1788953517658,
-      "type": "file"
-    },
-    {
-      "path": "src/03-terrain.js",
-      "accessCount": 6,
-      "lastAccessed": 1788879261148,
-      "type": "file"
-    },
-    {
-      "path": "src/style.css",
-      "accessCount": 5,
-      "lastAccessed": 1788879213682,
-      "type": "file"
-    },
-    {
       "path": "src/00-chars.js",
-      "accessCount": 4,
-      "lastAccessed": 1788953584079,
-      "type": "file"
-    },
-    {
-      "path": "src/02-art.js",
       "accessCount": 2,
-      "lastAccessed": 1788878892887,
-      "type": "file"
-    },
-    {
-      "path": "src/01-data.js",
-      "accessCount": 2,
-      "lastAccessed": 1788885534641,
-      "type": "file"
-    },
-    {
-      "path": "src/index.template.html",
-      "accessCount": 2,
-      "lastAccessed": 1788886062471,
-      "type": "file"
-    },
-    {
-      "path": "tools/fetch_osm.py",
-      "accessCount": 1,
-      "lastAccessed": 1788878526150,
-      "type": "file"
-    },
-    {
-      "path": "src/04-illust.js",
-      "accessCount": 1,
-      "lastAccessed": 1788878910639,
-      "type": "file"
-    },
-    {
-      "path": "src/06-load.js",
-      "accessCount": 1,
-      "lastAccessed": 1788879123806,
-      "type": "file"
-    },
-    {
-      "path": "tools/apps-script/Code.gs",
-      "accessCount": 1,
-      "lastAccessed": 1788879299116,
-      "type": "file"
-    },
-    {
-      "path": "tools/cut_chars.py",
-      "accessCount": 1,
-      "lastAccessed": 1788953280178,
+      "lastAccessed": 1788993976296,
       "type": "file"
     }
   ],
