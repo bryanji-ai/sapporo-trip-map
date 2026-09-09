@@ -423,7 +423,7 @@ function drawScreen(){
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.15);
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -738,7 +738,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
   }
   const psc = Math.max(0.6, bw/430);
   // 캐릭터는 사진 카드 반대편 아래 구석 — 카드나 라벨을 가리지 않게
-  const chW = bw * 0.17;
+  const chW = bw * 0.245;
   const chS = (typeof SPRITES !== 'undefined') && SPRITES[CHAR_OF[R.key]];
   const chH = chS ? chW * chS.h / chS.w : 0;
   const chX = side === 'L' ? bx + bw - chW - bw*0.02 : bx + bw*0.02;

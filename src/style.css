@@ -604,19 +604,19 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 
 /* 포스터 제목 옆 커플 — 원본 그림에서 오려 낸 것 */
 .p-couple{
-  flex:0 0 auto;height:6.2cqw;width:auto;align-self:center;
-  margin-bottom:-.4cqw;
+  flex:0 0 auto;height:8.6cqw;width:auto;align-self:center;
+  margin-bottom:-.8cqw;
 }
-@media (max-width:640px){ .p-couple{height:7.4cqw} }
+@media (max-width:640px){ .p-couple{height:9.8cqw} }
 
 
 /* ── 곳곳에 놓는 캐릭터 ── */
 .daybar{position:relative}
 .dayface{
-  height:34px;width:auto;flex:0 0 auto;margin:-6px -2px -6px 6px;
+  height:46px;width:auto;flex:0 0 auto;margin:-10px -2px -10px 8px;
   pointer-events:none;
 }
 .ex-empty{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .ex-empty p{margin:0}
-.empty-couple{width:min(210px,52%);height:auto;opacity:.92}
-@media (max-width:600px){ .dayface{height:30px} }
+.empty-couple{width:min(300px,66%);height:auto;opacity:.95}
+@media (max-width:600px){ .dayface{height:40px} }

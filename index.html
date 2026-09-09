@@ -621,22 +621,22 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 
 /* 포스터 제목 옆 커플 — 원본 그림에서 오려 낸 것 */
 .p-couple{
-  flex:0 0 auto;height:6.2cqw;width:auto;align-self:center;
-  margin-bottom:-.4cqw;
+  flex:0 0 auto;height:8.6cqw;width:auto;align-self:center;
+  margin-bottom:-.8cqw;
 }
-@media (max-width:640px){ .p-couple{height:7.4cqw} }
+@media (max-width:640px){ .p-couple{height:9.8cqw} }
 
 
 /* ── 곳곳에 놓는 캐릭터 ── */
 .daybar{position:relative}
 .dayface{
-  height:34px;width:auto;flex:0 0 auto;margin:-6px -2px -6px 6px;
+  height:46px;width:auto;flex:0 0 auto;margin:-10px -2px -10px 8px;
   pointer-events:none;
 }
 .ex-empty{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .ex-empty p{margin:0}
-.empty-couple{width:min(210px,52%);height:auto;opacity:.92}
-@media (max-width:600px){ .dayface{height:30px} }
+.empty-couple{width:min(300px,66%);height:auto;opacity:.95}
+@media (max-width:600px){ .dayface{height:40px} }
 
 </style>
 </head>
@@ -2476,7 +2476,7 @@ function drawScreen(){
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.15);
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -2791,7 +2791,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
   }
   const psc = Math.max(0.6, bw/430);
   // 캐릭터는 사진 카드 반대편 아래 구석 — 카드나 라벨을 가리지 않게
-  const chW = bw * 0.17;
+  const chW = bw * 0.245;
   const chS = (typeof SPRITES !== 'undefined') && SPRITES[CHAR_OF[R.key]];
   const chH = chS ? chW * chS.h / chS.w : 0;
   const chX = side === 'L' ? bx + bw - chW - bw*0.02 : bx + bw*0.02;
