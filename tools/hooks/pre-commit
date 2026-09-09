@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if git diff --cached --name-only | grep -q '^src/'; then
+  python3 tools/check-collisions.py src || {
+    echo; echo "✋ 커밋을 멈췄습니다. 이름 충돌을 먼저 해결하세요."
+    echo "   (정말 넘기려면 git commit --no-verify)"; exit 1; }
+fi
