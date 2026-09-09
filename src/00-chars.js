@@ -6,10 +6,20 @@
 /* 지역마다 어울리는 컷 */
 /* 9월 중순 홋카이도는 초가을이다 — 목도리·눈 컷은 쓰지 않는다.
    오타루는 계절색이 없는 기본 커플로 둔다. */
-const CHAR_OF = { sapporo:'ramen', otaru:'couple', biei:'hat' };
+/* 삿포로 주인공은 「SAPPORO 모자 + 지도」 컷이다 — 라멘 컷은 소품(cp-ramen)으로
+   같은 지도에 서므로, 주인공까지 라멘이면 같은 그림이 두 번 보인다. */
+const CHAR_OF = { sapporo:'cp-guide', otaru:'couple', biei:'hat' };
 
 /* 지도 반대 구석·패널 머리글에 세우는 개별 얼굴 (지역마다 다른 표정) */
 const FACE_OF = { sapporo:'hooni-a', otaru:'erni-b', biei:'erni-d' };
+
+/* 지역마다 곁들이는 소품 커플들 — 그 지역에서 할 일이 그림으로 보이게 한다.
+   여기도 초가을 컷만 쓴다 (눈꽃 타워·눈사람 컷은 아예 오려 오지 않았다). */
+const EXTRA_CHARS = {
+  sapporo: ['cp-ramen', 'cp-beer', 'cp-susukino'],
+  otaru:   ['cp-yakiniku', 'cp-icecream'],
+  biei:    ['cp-autumn'],
+};
 
 /* 날짜별로 돌려 쓰는 표정 — 펼쳐보기 머리글에 붙는다 */
 const FACE_CYCLE = ['erni-a','hooni-a','erni-b','hooni-b','erni-d','hooni-d','erni-c','hooni-c'];
@@ -114,6 +124,25 @@ function charDraggable(spriteKey, key, box, x, y, w, opacity){
     href="data:${s.mime};base64,${s.b64}"
     x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"
     opacity="${opacity == null ? 1 : opacity}"/>`;
+}
+
+/* ══ 소품 커플 여러 개 세우기 ══════════════════════════════════
+   커플 컷마다 가로세로 비가 달라서 폭을 맞추면 키가 들쭉날쭉해진다.
+   그래서 목표 '높이'(th)로 맞추고 폭을 비율대로 낸다 — 나란히 서도 눈높이가 같다.
+   taken 에는 이미 세운 자리들이 쌓인다 (호출부가 넘긴 배열을 그대로 채운다). */
+function charRow(keys, where, region, box, th, obstacles, taken, opacity){
+  let out = '';
+  (keys || []).forEach((k, i) => {
+    const s = (typeof SPRITES !== 'undefined') && SPRITES[k];
+    if (!s) return;
+    const w = th * s.w / s.h;
+    const ck = charKey(where, region, 'x' + i);
+    const p = savedSpot(ck, box, w, th) || freeSpots(box, w, th, obstacles, 1, taken)[0];
+    if (!p) return;
+    taken.push({ x: p.x, y: p.y, w: w, h: th });
+    out += charDraggable(k, ck, box, p.x, p.y, w, opacity);
+  });
+  return out;
 }
 
 /** 옮긴 자리를 서버에 남긴다. x 를 비우면 자동 배치로 되돌린다. */

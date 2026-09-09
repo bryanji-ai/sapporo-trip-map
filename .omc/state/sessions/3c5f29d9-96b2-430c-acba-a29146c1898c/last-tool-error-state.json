@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"node /tmp/touchtest.mjs \\\"$PWD/index.html\\\"\",\"description\":\"Re-run touch drag test against fixed build\"}",
+  "error": "Exit code 1\n시작 좌표 : 20.0 20.0 / scrollY 117\n끝  좌표 : 20.0 20.0 / scrollY 117\n이동 거리 : 0.0 (뷰박스 단위)\n이벤트   : pointerdown → touchstart → touchmove → pointercancel → touchmove → touchmove → touchmove → touchmove → touchmove\n❌ FAIL — 캐릭터가 움직이지 않았습니다",
+  "timestamp": "2026-09-09T10:35:11.375Z",
+  "retry_count": 1
+}

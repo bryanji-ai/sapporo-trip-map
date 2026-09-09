@@ -763,12 +763,33 @@ sheet.addEventListener('click', e => {
   sheet.addEventListener('pointercancel', end);
 })();
 
+/* 지도 위에 얹은 HTML(지역 전환 칩·축척 바)도 장애물이다 —
+   SVG 아래 깔리므로 그 자리에 세우면 캐릭터 머리가 잘린 것처럼 보인다.
+   화면 픽셀을 지도 좌표로 바꿔, 상자를 촘촘한 점으로 깔아 넘긴다. */
+function overlayObs(vb){
+  const obs = [];
+  const cw = mapwrap.clientWidth, ch = mapwrap.clientHeight;
+  if (!cw || !ch) return obs;
+  const sx = vb[2] / cw, sy = vb[3] / ch;
+  const step = Math.min(vb[2], vb[3]) * 0.03;
+  ['.regionsw', '.scalebar'].forEach(sel => {
+    const el = mapwrap.querySelector(sel);
+    if (!el) return;
+    const x0 = el.offsetLeft * sx, y0 = el.offsetTop * sy;
+    const x1 = x0 + el.offsetWidth * sx, y1 = y0 + el.offsetHeight * sy;
+    for (let x = x0; x <= x1; x += step)
+      for (let y = y0; y <= y1; y += step) obs.push([x, y]);
+  });
+  return obs;
+}
+
 /* 지도 탭 캐릭터 — 핀이 비는 두 구석에 소품 커플과 개별 얼굴을 나눠 세운다 */
 function charSpots(R, vs, vb){
   if (typeof SPRITES === 'undefined') return '';
   const W = vb[2], H = vb[3];
   const obs = vs.map(({p}) => { const q = R.px(p.lat, p.lon); return [q[0]-vb[0], q[1]-vb[1]]; })
-    .concat(R.marks.map(m => { const q = R.px(m.lat, m.lon); return [q[0]-vb[0], q[1]-vb[1]]; }));
+    .concat(R.marks.map(m => { const q = R.px(m.lat, m.lon); return [q[0]-vb[0], q[1]-vb[1]]; }))
+    .concat(overlayObs(vb));
 
   const a = SPRITES[CHAR_OF[R.key]], b = SPRITES[FACE_OF[R.key]];
   if (!a) return '';
@@ -779,11 +800,14 @@ function charSpots(R, vs, vb){
 
   const first = savedSpot(kA, box, aw, ah) || freeSpots(box, aw, ah, obs, 1)[0];
   let out = charDraggable(CHAR_OF[R.key], kA, box, first.x, first.y, aw);
+  const taken = [{ x:first.x, y:first.y, w:aw, h:ah }];
   if (b){
-    const c = savedSpot(kB, box, bw2, bh2)
-      || freeSpots(box, bw2, bh2, obs, 1, [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
+    const c = savedSpot(kB, box, bw2, bh2) || freeSpots(box, bw2, bh2, obs, 1, taken)[0];
+    taken.push({ x:c.x, y:c.y, w:bw2, h:bh2 });
     out += charDraggable(FACE_OF[R.key], kB, box, c.x, c.y, bw2, 0.95);
   }
+  /* 소품 커플들 — 주인공보다 작게 세워 지도를 덮지 않게 한다 */
+  out += charRow(EXTRA_CHARS[R.key], 'map', R.key, box, W*0.125, obs, taken);
   return out;
 }
 
@@ -979,6 +1003,9 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const key = charKey('print', R.key, 'a');
     const c = savedSpot(key, box, chW, chH) || freeSpots(box, chW, chH, obs, 1)[0];
     char = charDraggable(CHAR_OF[R.key], key, box, c.x, c.y, chW);
+    /* 인쇄 패널은 카드·이름표로 이미 빽빽하다 — 소품 커플은 앞의 둘까지만 */
+    char += charRow((EXTRA_CHARS[R.key] || []).slice(0, 2), 'print', R.key,
+                    box, bw*0.12, obs, [{ x:c.x, y:c.y, w:chW, h:chH }]);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);

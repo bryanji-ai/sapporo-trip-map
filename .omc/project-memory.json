@@ -61,8 +61,8 @@
   "hotPaths": [
     {
       "path": "src/05-render.js",
-      "accessCount": 10,
-      "lastAccessed": 1788947705249,
+      "accessCount": 13,
+      "lastAccessed": 1788953517658,
       "type": "file"
     },
     {
@@ -75,6 +75,12 @@
       "path": "src/style.css",
       "accessCount": 5,
       "lastAccessed": 1788879213682,
+      "type": "file"
+    },
+    {
+      "path": "src/00-chars.js",
+      "accessCount": 4,
+      "lastAccessed": 1788953584079,
       "type": "file"
     },
     {
@@ -117,6 +123,12 @@
       "path": "tools/apps-script/Code.gs",
       "accessCount": 1,
       "lastAccessed": 1788879299116,
+      "type": "file"
+    },
+    {
+      "path": "tools/cut_chars.py",
+      "accessCount": 1,
+      "lastAccessed": 1788953280178,
       "type": "file"
     }
   ],
