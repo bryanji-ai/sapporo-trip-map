@@ -241,7 +241,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   border:1px solid var(--land-edge);box-shadow:var(--shadow);
   display:grid;grid-template-rows:auto 1fr auto;padding:2.5%;container-type:inline-size;
 }
-.p-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+.p-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1.4cqw;
   border-bottom:1.5px solid var(--ink);padding-bottom:1.5cqw}
 .p-head h2{font-size:3.6cqw;letter-spacing:-.02em;line-height:1}
 .p-head .sub{font-family:"IBM Plex Mono",monospace;font-size:1.12cqw;color:var(--ink-2);letter-spacing:.1em;text-align:right;line-height:1.7}
@@ -600,3 +600,11 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   pointer-events:none;
 }
 @media print{.poster-view{display:none!important}}
+
+
+/* 포스터 제목 옆 커플 — 원본 그림에서 오려 낸 것 */
+.p-couple{
+  flex:0 0 auto;height:6.2cqw;width:auto;align-self:center;
+  margin-bottom:-.4cqw;
+}
+@media (max-width:640px){ .p-couple{height:7.4cqw} }

@@ -14,12 +14,13 @@ def jz(name):
 
 data = (f"const MAPS={{sapporo:{jz('sapporo.json')},"
         f"otaru:{jz('otaru.json')},biei:{jz('biei.json')}}};\n"
-        f"const DEM_BIEI={jz('biei_dem.json')};")
+        f"const DEM_BIEI={jz('biei_dem.json')};\n"
+        f"const SPRITES={jz('sprites.json')};")
 
 # 06-load.js 가 맨 끝 — 앞의 정의가 다 올라온 뒤에 boot() 이 돈다
 app = "\n".join(rd(f) for f in
-                ["01-data.js", "02-art.js", "03-terrain.js", "04-illust.js",
-                 "05-render.js", "06-load.js"])
+                ["00-chars.js", "01-data.js", "02-art.js", "03-terrain.js",
+                 "04-illust.js", "05-render.js", "06-load.js"])
 
 out = (rd("index.template.html")
        .replace("/*__STYLE__*/", rd("style.css"))

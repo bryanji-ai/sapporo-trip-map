@@ -422,7 +422,8 @@ function drawScreen(){
 
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
-  mapillust.innerHTML = R.illust(vb[2], vb[3]);
+  // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.15);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -736,7 +737,13 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     pbg.setAttribute('height', (vh*1.04).toFixed(1));
   }
   const psc = Math.max(0.6, bw/430);
-  overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}`;
+  // 캐릭터는 사진 카드 반대편 아래 구석 — 카드나 라벨을 가리지 않게
+  const chW = bw * 0.17;
+  const chS = (typeof SPRITES !== 'undefined') && SPRITES[CHAR_OF[R.key]];
+  const chH = chS ? chW * chS.h / chS.w : 0;
+  const chX = side === 'L' ? bx + bw - chW - bw*0.02 : bx + bw*0.02;
+  const char = chS ? charImg(CHAR_OF[R.key], chX, by + bh - chH - bh*0.02, chW) : '';
+  overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
   const panelEl = overEl.closest('.p-panel');
   if (panelEl) panelEl.dataset.cards = side;      // 힌트를 카드 반대편에 둔다
@@ -757,6 +764,13 @@ function drawPoster(){
 }
 
 /* 포스터 패널 머리글의 날짜 — 실제로 사진이 있는 날로 채운다 */
+/* 포스터 제목 옆 커플 이미지 — 한 번만 넣는다 */
+function stampCouple(){
+  const el = document.getElementById('pCouple');
+  if (!el || el.src || typeof SPRITES === 'undefined' || !SPRITES.couple) return;
+  el.src = `data:${SPRITES.couple.mime};base64,${SPRITES.couple.b64}`;
+}
+
 function stampPosterDays(){
   PANELS.forEach(pn => {
     const el = document.querySelector(`#${pn.over}`).closest('.p-panel').querySelector('.cap span');
@@ -863,6 +877,7 @@ function refreshAll(){
   buildDays();
   markRegionCounts();
   stampPosterDays();
+  stampCouple();
   drawScreen();
   buildExpand();
   posterRefresh();
