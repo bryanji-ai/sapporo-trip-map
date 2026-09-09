@@ -72,6 +72,12 @@
       "accessCount": 2,
       "lastAccessed": 1788993976296,
       "type": "file"
+    },
+    {
+      "path": "tools/normalize_chars.py",
+      "accessCount": 1,
+      "lastAccessed": 1788994204505,
+      "type": "file"
     }
   ],
   "userDirectives": []
