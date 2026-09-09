@@ -2671,11 +2671,16 @@ function shotsOf(rec, photoMap){
   if (!Array.isArray(raw)) return [];
   return raw
     .map(s => typeof s === 'string'
-      ? {id:s, hero:false}
+      ? {id:s, hero:false, est:false}
       : {id:  str(s, ['id','fileId','file','thumb']),
          src: str(s, ['src','url']),               // 샘플 사진은 주소를 직접 들고 온다
-         hero: !!(s.hero || s.isHero || s.rep)})
-    .filter(s => s.id || s.src);
+         hero: !!(s.hero || s.isHero || s.rep),
+         est:  !!s.est,                            // 위치를 이웃에게서 물려받은 사진
+         // 웹앱에서 「목록에서 뺀」 사진은 지도에 올리지 않는다.
+         // 백엔드는 되돌리기를 위해 뺀 것까지 내려보내므로 여기서 거른다.
+         // (keep 필드가 없던 옛 응답은 그대로 통과시킨다)
+         keep: s.keep !== false})
+    .filter(s => (s.id || s.src) && s.keep !== false);
 }
 /* 사진 장수 — 목록이 없으면 숫자 필드에서 */
 function countOf(rec, shots){
