@@ -30,33 +30,58 @@ function charImg(key, x, y, w, opacity){
     opacity="${opacity == null ? 1 : opacity}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
-/* ══ 빈 구석 고르기 ══════════════════════════════════════════════
+/* ══ 빈 자리 찾기 ══════════════════════════════════════════════
    캐릭터를 구석에 고정해 두면 그 자리에 핀·이름표가 있을 때 가린다.
    (2026-09-09 삿포로 인쇄 패널에서 니조시장을 덮었다)
-   핀과 랜드마크가 가장 적은 구석을 골라 세운다.
+
+   네 구석 중에서만 고르면 사진이 쌓여 네 구석이 다 찼을 때 답이 없다.
+   여행 중엔 핀이 수십 개가 되므로, 가장자리를 따라 촘촘히 후보를 놓고
+   그중 가장 빈 자리를 고른다. 가운데로는 가지 않게 가장자리를 선호한다.
 
    좌표계는 호출부가 정한다 — 장애물 목록과 상자를 같은 공간으로 넘긴다. */
-function freeCorners(box, w, h, obstacles, n){
+function freeSpots(box, w, h, obstacles, n, taken){
   const [bx, by, bw, bh] = box;
-  const pad  = Math.min(bw, bh) * 0.025;
-  const near = Math.min(bw, bh) * 0.10;      // 이름표가 옆으로 퍼지는 몫
+  const pad  = Math.min(bw, bh) * 0.02;
+  const near = Math.min(bw, bh) * 0.09;      // 이름표가 옆으로 퍼지는 몫
+  const used = taken || [];
 
-  const cands = [
-    { key:'bl', x: bx + pad,          y: by + bh - h - pad },
-    { key:'br', x: bx + bw - w - pad, y: by + bh - h - pad },
-    { key:'tl', x: bx + pad,          y: by + pad },
-    { key:'tr', x: bx + bw - w - pad, y: by + pad }
-  ];
+  /* 가장자리를 따라 후보를 깐다 — 위·아래는 가로로, 좌·우는 세로로 */
+  const cands = [];
+  const STEPS = 7;
+  for (let i = 0; i < STEPS; i++){
+    const fx = i / (STEPS - 1);
+    const x = bx + pad + fx * (bw - w - pad*2);
+    cands.push({ x: x, y: by + pad });                    // 위
+    cands.push({ x: x, y: by + bh - h - pad });           // 아래
+  }
+  for (let i = 1; i < STEPS - 1; i++){
+    const fy = i / (STEPS - 1);
+    const y = by + pad + fy * (bh - h - pad*2);
+    cands.push({ x: bx + pad,          y: y });           // 왼
+    cands.push({ x: bx + bw - w - pad, y: y });           // 오른
+  }
+
+  const cx0 = bx + bw/2, cy0 = by + bh/2;
   cands.forEach(c => {
-    c.n = 0;
+    let hard = 0, soft = 0;
     for (let i = 0; i < obstacles.length; i++){
-      const o = obstacles[i];
-      if (o[0] > c.x - near && o[0] < c.x + w + near &&
-          o[1] > c.y - near && o[1] < c.y + h + near) c.n++;
+      const ox = obstacles[i][0], oy = obstacles[i][1];
+      if (ox > c.x && ox < c.x + w && oy > c.y && oy < c.y + h) hard++;
+      else if (ox > c.x - near && ox < c.x + w + near &&
+               oy > c.y - near && oy < c.y + h + near) soft++;
     }
+    // 이미 세운 캐릭터와 겹치면 크게 깎는다
+    let clash = 0;
+    used.forEach(u => {
+      if (Math.abs((c.x + w/2) - (u.x + u.w/2)) < (w + u.w)/2 &&
+          Math.abs((c.y + h/2) - (u.y + u.h/2)) < (h + u.h)/2) clash++;
+    });
+    // 가운데로 갈수록 손해 — 지도 한복판에 서지 않게
+    const mid = 1 - (Math.abs(c.x + w/2 - cx0)/(bw/2) + Math.abs(c.y + h/2 - cy0)/(bh/2)) / 2;
+    c.score = hard*10 + soft*3 + clash*100 + mid*2;
+    c.hard = hard; c.soft = soft;
   });
-  // 빈 곳 우선, 같으면 아래쪽을 먼저 (지도는 위쪽에 이름표가 몰린다)
-  const order = ['bl','br','tl','tr'];
-  cands.sort((a, b) => a.n - b.n || order.indexOf(a.key) - order.indexOf(b.key));
+  cands.sort((a, b) => a.score - b.score);
   return cands.slice(0, n || 1);
 }
+

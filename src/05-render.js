@@ -570,16 +570,13 @@ function charSpots(R, vs, vb){
   if (!a) return '';
   const aw = W*0.225, ah = aw*a.h/a.w;
   const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
-  const two = freeCorners([0, 0, W, H], aw, ah, obs, 4);
-  let out = charImg(CHAR_OF[R.key], two[0].x, two[0].y, aw);
+  const first = freeSpots([0, 0, W, H], aw, ah, obs, 1)[0];
+  let out = charImg(CHAR_OF[R.key], first.x, first.y, aw);
   if (b){
-    // 커플이 선 자리와 겹치지 않는 구석 중 가장 빈 곳
-    const rest = two.slice(1).filter(c =>
-      Math.abs(c.x - two[0].x) > aw*0.5 || Math.abs(c.y - two[0].y) > ah*0.5);
-    const c = rest.length ? rest[0] : two[two.length-1];
-    const cx = (c.x > W/2) ? W - bw2 - W*0.025 : W*0.025;
-    const cy = (c.y > H/2) ? H - bh2 - H*0.025 : H*0.025;
-    out += charImg(FACE_OF[R.key], cx, cy, bw2, 0.95);
+    // 이미 선 커플을 피해 다시 가장 빈 자리를 찾는다
+    const c = freeSpots([0, 0, W, H], bw2, bh2, obs, 1,
+                        [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
+    out += charImg(FACE_OF[R.key], c.x, c.y, bw2, 0.95);
   }
   return out;
 }
@@ -772,7 +769,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const obs = spots.map(o => [o.x, o.y])
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
-    const c = freeCorners([bx, by, bw, bh], chW, chH, obs, 1)[0];
+    const c = freeSpots([bx, by, bw, bh], chW, chH, obs, 1)[0];
     char = charImg(CHAR_OF[R.key], c.x, c.y, chW);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;

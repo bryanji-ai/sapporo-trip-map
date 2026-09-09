@@ -809,36 +809,61 @@ function charImg(key, x, y, w, opacity){
     opacity="${opacity == null ? 1 : opacity}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
-/* ══ 빈 구석 고르기 ══════════════════════════════════════════════
+/* ══ 빈 자리 찾기 ══════════════════════════════════════════════
    캐릭터를 구석에 고정해 두면 그 자리에 핀·이름표가 있을 때 가린다.
    (2026-09-09 삿포로 인쇄 패널에서 니조시장을 덮었다)
-   핀과 랜드마크가 가장 적은 구석을 골라 세운다.
+
+   네 구석 중에서만 고르면 사진이 쌓여 네 구석이 다 찼을 때 답이 없다.
+   여행 중엔 핀이 수십 개가 되므로, 가장자리를 따라 촘촘히 후보를 놓고
+   그중 가장 빈 자리를 고른다. 가운데로는 가지 않게 가장자리를 선호한다.
 
    좌표계는 호출부가 정한다 — 장애물 목록과 상자를 같은 공간으로 넘긴다. */
-function freeCorners(box, w, h, obstacles, n){
+function freeSpots(box, w, h, obstacles, n, taken){
   const [bx, by, bw, bh] = box;
-  const pad  = Math.min(bw, bh) * 0.025;
-  const near = Math.min(bw, bh) * 0.10;      // 이름표가 옆으로 퍼지는 몫
+  const pad  = Math.min(bw, bh) * 0.02;
+  const near = Math.min(bw, bh) * 0.09;      // 이름표가 옆으로 퍼지는 몫
+  const used = taken || [];
 
-  const cands = [
-    { key:'bl', x: bx + pad,          y: by + bh - h - pad },
-    { key:'br', x: bx + bw - w - pad, y: by + bh - h - pad },
-    { key:'tl', x: bx + pad,          y: by + pad },
-    { key:'tr', x: bx + bw - w - pad, y: by + pad }
-  ];
+  /* 가장자리를 따라 후보를 깐다 — 위·아래는 가로로, 좌·우는 세로로 */
+  const cands = [];
+  const STEPS = 7;
+  for (let i = 0; i < STEPS; i++){
+    const fx = i / (STEPS - 1);
+    const x = bx + pad + fx * (bw - w - pad*2);
+    cands.push({ x: x, y: by + pad });                    // 위
+    cands.push({ x: x, y: by + bh - h - pad });           // 아래
+  }
+  for (let i = 1; i < STEPS - 1; i++){
+    const fy = i / (STEPS - 1);
+    const y = by + pad + fy * (bh - h - pad*2);
+    cands.push({ x: bx + pad,          y: y });           // 왼
+    cands.push({ x: bx + bw - w - pad, y: y });           // 오른
+  }
+
+  const cx0 = bx + bw/2, cy0 = by + bh/2;
   cands.forEach(c => {
-    c.n = 0;
+    let hard = 0, soft = 0;
     for (let i = 0; i < obstacles.length; i++){
-      const o = obstacles[i];
-      if (o[0] > c.x - near && o[0] < c.x + w + near &&
-          o[1] > c.y - near && o[1] < c.y + h + near) c.n++;
+      const ox = obstacles[i][0], oy = obstacles[i][1];
+      if (ox > c.x && ox < c.x + w && oy > c.y && oy < c.y + h) hard++;
+      else if (ox > c.x - near && ox < c.x + w + near &&
+               oy > c.y - near && oy < c.y + h + near) soft++;
     }
+    // 이미 세운 캐릭터와 겹치면 크게 깎는다
+    let clash = 0;
+    used.forEach(u => {
+      if (Math.abs((c.x + w/2) - (u.x + u.w/2)) < (w + u.w)/2 &&
+          Math.abs((c.y + h/2) - (u.y + u.h/2)) < (h + u.h)/2) clash++;
+    });
+    // 가운데로 갈수록 손해 — 지도 한복판에 서지 않게
+    const mid = 1 - (Math.abs(c.x + w/2 - cx0)/(bw/2) + Math.abs(c.y + h/2 - cy0)/(bh/2)) / 2;
+    c.score = hard*10 + soft*3 + clash*100 + mid*2;
+    c.hard = hard; c.soft = soft;
   });
-  // 빈 곳 우선, 같으면 아래쪽을 먼저 (지도는 위쪽에 이름표가 몰린다)
-  const order = ['bl','br','tl','tr'];
-  cands.sort((a, b) => a.n - b.n || order.indexOf(a.key) - order.indexOf(b.key));
+  cands.sort((a, b) => a.score - b.score);
   return cands.slice(0, n || 1);
 }
+
 
 /* ══════════════════════════════════════════════════════════════
    후니＆어니의 홋카이도 여행 기록 지도
@@ -2665,16 +2690,13 @@ function charSpots(R, vs, vb){
   if (!a) return '';
   const aw = W*0.225, ah = aw*a.h/a.w;
   const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
-  const two = freeCorners([0, 0, W, H], aw, ah, obs, 4);
-  let out = charImg(CHAR_OF[R.key], two[0].x, two[0].y, aw);
+  const first = freeSpots([0, 0, W, H], aw, ah, obs, 1)[0];
+  let out = charImg(CHAR_OF[R.key], first.x, first.y, aw);
   if (b){
-    // 커플이 선 자리와 겹치지 않는 구석 중 가장 빈 곳
-    const rest = two.slice(1).filter(c =>
-      Math.abs(c.x - two[0].x) > aw*0.5 || Math.abs(c.y - two[0].y) > ah*0.5);
-    const c = rest.length ? rest[0] : two[two.length-1];
-    const cx = (c.x > W/2) ? W - bw2 - W*0.025 : W*0.025;
-    const cy = (c.y > H/2) ? H - bh2 - H*0.025 : H*0.025;
-    out += charImg(FACE_OF[R.key], cx, cy, bw2, 0.95);
+    // 이미 선 커플을 피해 다시 가장 빈 자리를 찾는다
+    const c = freeSpots([0, 0, W, H], bw2, bh2, obs, 1,
+                        [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
+    out += charImg(FACE_OF[R.key], c.x, c.y, bw2, 0.95);
   }
   return out;
 }
@@ -2867,7 +2889,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const obs = spots.map(o => [o.x, o.y])
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
-    const c = freeCorners([bx, by, bw, bh], chW, chH, obs, 1)[0];
+    const c = freeSpots([bx, by, bw, bh], chW, chH, obs, 1)[0];
     char = charImg(CHAR_OF[R.key], c.x, c.y, chW);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
