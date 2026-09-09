@@ -423,7 +423,7 @@ function drawScreen(){
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225);
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225) + charTop(R.key, vb[2], vb[3], 0.135);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -766,9 +766,17 @@ function drawPoster(){
 /* 포스터 패널 머리글의 날짜 — 실제로 사진이 있는 날로 채운다 */
 /* 포스터 제목 옆 커플 이미지 — 한 번만 넣는다 */
 function stampCouple(){
-  const el = document.getElementById('pCouple');
-  if (!el || el.src || typeof SPRITES === 'undefined' || !SPRITES.couple) return;
-  el.src = `data:${SPRITES.couple.mime};base64,${SPRITES.couple.b64}`;
+  if (typeof SPRITES === 'undefined') return;
+  const put = (id, key) => {
+    const el = document.getElementById(id);
+    if (el && !el.src) { const u = charSrc(key); if (u) el.src = u; }
+  };
+  put('pCouple',    'couple');       // 인쇄본 제목 옆
+  put('pFootFace',  'ramen');        // 인쇄본 범례 옆
+  put('exHeadFace', 'couple');       // 펼쳐보기 머리글
+  put('capS', FACE_OF.sapporo);      // 인쇄 패널 머리글 — 지역별 표정
+  put('capO', FACE_OF.otaru);
+  put('capB', FACE_OF.biei);
 }
 
 function stampPosterDays(){

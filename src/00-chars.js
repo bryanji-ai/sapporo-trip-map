@@ -8,6 +8,9 @@
    오타루는 계절색이 없는 기본 커플로 둔다. */
 const CHAR_OF = { sapporo:'ramen', otaru:'couple', biei:'hat' };
 
+/* 지도 반대 구석·패널 머리글에 세우는 개별 얼굴 (지역마다 다른 표정) */
+const FACE_OF = { sapporo:'hooni-a', otaru:'erni-b', biei:'erni-d' };
+
 /* 날짜별로 돌려 쓰는 표정 — 펼쳐보기 머리글에 붙는다 */
 const FACE_CYCLE = ['erni-a','hooni-a','erni-b','hooni-b','erni-d','hooni-d','erni-c','hooni-c'];
 
@@ -36,4 +39,15 @@ function charCorner(regionKey, W, H, frac, side){
   const h = w * s.h / s.w;
   const x = (side === 'right') ? W - w - W*0.03 : W*0.03;
   return charImg(k, x, H - h - H*0.03, w);
+}
+
+
+/* 지도 위쪽 반대 구석에 세우는 개별 얼굴 */
+function charTop(regionKey, W, H, frac, side){
+  const k = FACE_OF[regionKey];
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[k];
+  if (!s) return '';
+  const w = W * (frac || 0.12);
+  const x = (side === 'left') ? W*0.03 : W - w - W*0.03;
+  return charImg(k, x, H*0.035, w, 0.95);
 }

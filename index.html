@@ -638,6 +638,21 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .empty-couple{width:min(300px,66%);height:auto;opacity:.95}
 @media (max-width:600px){ .dayface{height:40px} }
 
+
+/* ── 곳곳에 놓는 캐릭터 (2차) ── */
+.cap{display:flex;align-items:center;gap:.6cqw}
+.capface{height:3.6cqw;width:auto;flex:0 0 auto;margin:-.6cqw 0}
+.p-foot{align-items:center}
+.p-footface{height:6.4cqw;width:auto;flex:0 0 auto;margin-left:auto;margin-bottom:-.6cqw}
+.ex-head{display:flex;align-items:center;gap:12px}
+.ex-head-txt{min-width:0;flex:1 1 auto}
+.ex-headface{height:74px;width:auto;flex:0 0 auto;margin:-8px -2px -8px 0}
+@media (max-width:640px){
+  .capface{height:4.4cqw}
+  .p-footface{height:7.6cqw}
+  .ex-headface{height:62px}
+}
+
 </style>
 </head>
 <body>
@@ -723,28 +738,32 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
     <!-- 홋카이도 실제 지형대로 — 삿포로 왼쪽 전체, 오타루 북서(우상단), 비에이 북동 내륙(우하단) -->
     <div class="p-body">
       <div class="p-panel big pn-sapporo" data-region="sapporo">
-        <div class="cap">삿포로 <em>札幌</em><span></span></div>
+        <div class="cap"><img class="capface" id="capS" alt="" aria-hidden="true">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
       <div class="p-panel sm pn-otaru" data-region="otaru">
-        <div class="cap">오타루 <em>小樽</em><span></span></div>
+        <div class="cap"><img class="capface" id="capO" alt="" aria-hidden="true">오타루 <em>小樽</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
       </div>
       <div class="p-panel sm pn-biei" data-region="biei">
-        <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
+        <div class="cap"><img class="capface" id="capB" alt="" aria-hidden="true">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
       </div>
     </div>
     <div class="p-foot">
       <div class="p-legend" id="plegend"></div>
+      <img class="p-footface" id="pFootFace" alt="" aria-hidden="true">
     </div>
   </div>
 </section>
 
 <section class="expand" id="expand">
   <div class="ex-head">
-    <h1>다시 걸어보기</h1>
-    <p>간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
+    <div class="ex-head-txt">
+      <h1>다시 걸어보기</h1>
+      <p>간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
+    </div>
+    <img class="ex-headface" id="exHeadFace" alt="" aria-hidden="true">
   </div>
   <div id="exbody"></div>
 </section>
@@ -767,6 +786,9 @@ const SPRITES={"couple":{"w":283,"h":210,"b64":"UklGRupwAABXRUJQVlA4WAoAAAAQAAAA
 /* 9월 중순 홋카이도는 초가을이다 — 목도리·눈 컷은 쓰지 않는다.
    오타루는 계절색이 없는 기본 커플로 둔다. */
 const CHAR_OF = { sapporo:'ramen', otaru:'couple', biei:'hat' };
+
+/* 지도 반대 구석·패널 머리글에 세우는 개별 얼굴 (지역마다 다른 표정) */
+const FACE_OF = { sapporo:'hooni-a', otaru:'erni-b', biei:'erni-d' };
 
 /* 날짜별로 돌려 쓰는 표정 — 펼쳐보기 머리글에 붙는다 */
 const FACE_CYCLE = ['erni-a','hooni-a','erni-b','hooni-b','erni-d','hooni-d','erni-c','hooni-c'];
@@ -796,6 +818,17 @@ function charCorner(regionKey, W, H, frac, side){
   const h = w * s.h / s.w;
   const x = (side === 'right') ? W - w - W*0.03 : W*0.03;
   return charImg(k, x, H - h - H*0.03, w);
+}
+
+
+/* 지도 위쪽 반대 구석에 세우는 개별 얼굴 */
+function charTop(regionKey, W, H, frac, side){
+  const k = FACE_OF[regionKey];
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[k];
+  if (!s) return '';
+  const w = W * (frac || 0.12);
+  const x = (side === 'left') ? W*0.03 : W - w - W*0.03;
+  return charImg(k, x, H*0.035, w, 0.95);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2476,7 +2509,7 @@ function drawScreen(){
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225);
+  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charCorner(R.key, vb[2], vb[3], 0.225) + charTop(R.key, vb[2], vb[3], 0.135);
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -2819,9 +2852,17 @@ function drawPoster(){
 /* 포스터 패널 머리글의 날짜 — 실제로 사진이 있는 날로 채운다 */
 /* 포스터 제목 옆 커플 이미지 — 한 번만 넣는다 */
 function stampCouple(){
-  const el = document.getElementById('pCouple');
-  if (!el || el.src || typeof SPRITES === 'undefined' || !SPRITES.couple) return;
-  el.src = `data:${SPRITES.couple.mime};base64,${SPRITES.couple.b64}`;
+  if (typeof SPRITES === 'undefined') return;
+  const put = (id, key) => {
+    const el = document.getElementById(id);
+    if (el && !el.src) { const u = charSrc(key); if (u) el.src = u; }
+  };
+  put('pCouple',    'couple');       // 인쇄본 제목 옆
+  put('pFootFace',  'ramen');        // 인쇄본 범례 옆
+  put('exHeadFace', 'couple');       // 펼쳐보기 머리글
+  put('capS', FACE_OF.sapporo);      // 인쇄 패널 머리글 — 지역별 표정
+  put('capO', FACE_OF.otaru);
+  put('capB', FACE_OF.biei);
 }
 
 function stampPosterDays(){

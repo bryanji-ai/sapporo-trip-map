@@ -101,28 +101,32 @@ img{max-width:100%}
     <!-- 홋카이도 실제 지형대로 — 삿포로 왼쪽 전체, 오타루 북서(우상단), 비에이 북동 내륙(우하단) -->
     <div class="p-body">
       <div class="p-panel big pn-sapporo" data-region="sapporo">
-        <div class="cap">삿포로 <em>札幌</em><span></span></div>
+        <div class="cap"><img class="capface" id="capS" alt="" aria-hidden="true">삿포로 <em>札幌</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-s" aria-hidden="true"></svg><svg id="pover-s" role="img" aria-label="대표 사진이 붙은 삿포로 지도"></svg></div>
       </div>
       <div class="p-panel sm pn-otaru" data-region="otaru">
-        <div class="cap">오타루 <em>小樽</em><span></span></div>
+        <div class="cap"><img class="capface" id="capO" alt="" aria-hidden="true">오타루 <em>小樽</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-o" aria-hidden="true"></svg><svg id="pover-o" role="img" aria-label="대표 사진이 붙은 오타루 지도"></svg></div>
       </div>
       <div class="p-panel sm pn-biei" data-region="biei">
-        <div class="cap">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
+        <div class="cap"><img class="capface" id="capB" alt="" aria-hidden="true">비에이 · 후라노 <em>美瑛・富良野</em><span></span></div>
         <div class="p-map"><svg class="pbase" id="pbase-b" aria-hidden="true"></svg><svg id="pover-b" role="img" aria-label="대표 사진이 붙은 비에이 지도"></svg></div>
       </div>
     </div>
     <div class="p-foot">
       <div class="p-legend" id="plegend"></div>
+      <img class="p-footface" id="pFootFace" alt="" aria-hidden="true">
     </div>
   </div>
 </section>
 
 <section class="expand" id="expand">
   <div class="ex-head">
-    <h1>다시 걸어보기</h1>
-    <p>간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
+    <div class="ex-head-txt">
+      <h1>다시 걸어보기</h1>
+      <p>간 순서 그대로. 별표가 켜진 사진이 인쇄본에 올라갑니다.</p>
+    </div>
+    <img class="ex-headface" id="exHeadFace" alt="" aria-hidden="true">
   </div>
   <div id="exbody"></div>
 </section>
