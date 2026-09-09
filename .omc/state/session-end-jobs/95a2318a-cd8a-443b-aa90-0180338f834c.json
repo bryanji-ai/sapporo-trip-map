@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "jobId": "8e062ff9-bd2a-4a7a-aa3f-fa76fb6854d1",
+  "sessionId": "95a2318a-cd8a-443b-aa90-0180338f834c",
+  "scopeKey": "a509c201388a19f05ccf0a6d4c1261b8a27e0602f353b9f9a8965cc62ed96a4e",
+  "revision": 41,
+  "createdAt": "2026-09-09T10:16:09.343Z",
+  "updatedAt": "2026-09-09T10:16:10.665Z",
+  "producerGraceExpiresAt": "2026-09-09T10:16:39.344Z",
+  "bestEffortDeadlineAt": "2026-09-09T10:17:30.344Z",
+  "producers": {
+    "core": {
+      "state": "sealed",
+      "intentKey": "c7acdbe429a1c7493fccf03ed06273e00194abf0315b6b53cb3a78f4318bebf8",
+      "payloadDigest": "c7acdbe429a1c7493fccf03ed06273e00194abf0315b6b53cb3a78f4318bebf8",
+      "sealedAt": "2026-09-09T10:16:09.401Z",
+      "sealedBy": "foreground"
+    },
+    "wiki": {
+      "state": "no-op",
+      "sealedAt": "2026-09-09T10:16:09.343Z",
+      "sealedBy": "wiki-producer"
+    }
+  },
+  "actions": {
+    "foreground-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 0,
+      "idempotencyKey": "febf6dba2f2536433960a07f7cedce72e946b43ced0896570df80f017b8914d2",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {},
+        "foregroundResult": {
+          "removedTransientFiles": 1,
+          "completedAt": "2026-09-09T10:16:09.400Z"
+        }
+      },
+      "budgetMs": 9000,
+      "completedAt": "2026-09-09T10:16:09.401Z",
+      "lastOutcomeCode": "completed"
+    },
+    "wiki-capture": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 0,
+      "idempotencyKey": "1719cd1ef5b51e0269b78c4cb8c9308c9c1f7b82fd1c067fc034c060f23863f5",
+      "payload": {},
+      "budgetMs": 9000,
+      "completedAt": "2026-09-09T10:16:09.343Z"
+    },
+    "team-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "cee6ac31df545408e1e822247ac249b3f8182a98a5fe8e448ae3b251e55bdee1",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-09-09T10:16:09.484Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "7d039593-98fb-4adb-a2d4-adbfcd63745f",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:09.666Z"
+    },
+    "python-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "1f1370c4ac056606059d517e2f106b602d8cbcb04587b3fcc5f3b9f89e649cd0",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-09-09T10:16:09.684Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "2ee0f1be-1437-4ad9-b42d-278ae6427a48",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:09.875Z"
+    },
+    "reply-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "0b3a8b47c28b26d56aca004d4f572b96c118f16819c0d35162418816f9a5420a",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-09-09T10:16:09.893Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "1d017ded-1163-4820-a61b-3c496e5897c9",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:10.071Z"
+    },
+    "callback": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "d068ede2655bf89e0c0950e087d0603d7dcf45538e94f20a654d08c6f4841895",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-09-09T10:16:10.089Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "f83f4a67-3458-43cc-9840-1ecadf83b0f7",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:10.257Z"
+    },
+    "notification": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "89c0438ff63097ce04beb60efb87292ff68a7af350a0ee331f3de9dbf42d62fc",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-09-09T10:16:10.276Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "1f084c36-7138-4be6-ba87-23c1edcf3ffe",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:10.445Z"
+    },
+    "openclaw": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "31fe8f6e1cf204e27006de511df257326fdd98655122ca437013e8779ffc735b",
+      "payload": {
+        "transcriptPath": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+        "cwd": "/Users/seunghunji/sapporo-trip-map",
+        "reason": "other",
+        "input": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "transcript_path": "/Users/seunghunji/.claude/projects/-Users-seunghunji-sapporo-trip-map/95a2318a-cd8a-443b-aa90-0180338f834c.jsonl",
+          "cwd": "/Users/seunghunji/sapporo-trip-map",
+          "prompt_id": "75f24da5-339d-42cc-93ae-2cafcd58f65b",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "95a2318a-cd8a-443b-aa90-0180338f834c",
+          "ended_at": "2026-09-09T10:16:09.342Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-09-09T10:16:10.462Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "0986874b-b7fe-4ae5-8833-49e1922e39cb",
+        "phase": "terminal",
+        "deadlineAt": "2026-09-09T10:16:19.447Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-09-09T10:16:10.628Z"
+    }
+  },
+  "owner": null,
+  "phase": "complete",
+  "completion": {
+    "completedAt": "2026-09-09T10:16:10.646Z",
+    "terminalDigest": "0420fb7bae3359b1ade54ded419bf50b19b97b3d9394ba1705e26594cd6cb50f",
+    "terminalRevision": 40
+  }
+}

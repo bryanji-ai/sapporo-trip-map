@@ -228,22 +228,35 @@ document.getElementById('printview').addEventListener('click', e => {
     };
     im.classList.add('dragging');
     try { im.setPointerCapture(e.pointerId); } catch (_) {}
+    document.addEventListener('pointermove', move, true);
   }, true);
 
-  document.addEventListener('pointermove', e => {
+  /* 🔴 예전에는 document 에 pointermove 를 늘 걸어 두었다 — 지도를 밀 때마다 손가락 좌표를
+        SVG 좌표로 바꾸는 계산이 따라붙어 스크롤이 걸렸다. 끌기 시작할 때만 붙인다.
+        옮긴 자리는 프레임마다 한 번(rAF)만 반영한다 — 이벤트가 프레임보다 자주 온다. (2026-09-09) */
+  let raf = 0;
+  function move(e){
     if (!cur) return;
     const q = toUser(cur.svg, e);
     if (!q) return;
-    const x = Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx));
-    const y = Math.max(cur.by, Math.min(cur.by + cur.bh - cur.h, q.y - cur.dy));
-    cur.im.setAttribute('x', x.toFixed(1));
-    cur.im.setAttribute('y', y.toFixed(1));
+    cur.at = [Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx)),
+              Math.max(cur.by, Math.min(cur.by + cur.bh - cur.h, q.y - cur.dy))];
     cur.moved = true;
+    if (!raf) raf = requestAnimationFrame(paint);
     e.preventDefault(); e.stopPropagation();
-  }, true);
+  }
+  function paint(){
+    raf = 0;
+    if (!cur || !cur.at) return;
+    cur.im.setAttribute('x', cur.at[0].toFixed(1));
+    cur.im.setAttribute('y', cur.at[1].toFixed(1));
+  }
 
   function drop(e){
     if (!cur) return;
+    document.removeEventListener('pointermove', move, true);
+    if (raf){ cancelAnimationFrame(raf); raf = 0; }
+    paint();                                   // 마지막 좌표를 놓치지 않게 바로 반영
     const im = cur.im;
     im.classList.remove('dragging');
     if (cur.moved){
@@ -256,8 +269,8 @@ document.getElementById('printview').addEventListener('click', e => {
     }
     cur = null;
   }
-  document.addEventListener('pointerup', drop, true);
-  document.addEventListener('pointercancel', drop, true);
+  document.addEventListener('pointerup', drop, false);
+  document.addEventListener('pointercancel', drop, false);
 
   /* 두 번 누르면 자동 배치로 */
   document.addEventListener('dblclick', e => {
@@ -463,6 +476,13 @@ const mapbase  = document.getElementById('mapbase');
 const mapover  = document.getElementById('mapover');
 const mapillust= document.getElementById('mapillust');
 
+/* 같은 내용이면 innerHTML 을 다시 쓰지 않는다 — 문자열 비교는 SVG 재파싱보다 훨씬 싸다 */
+function setSvg(el, html){
+  if (el._html === html) return;
+  el._html = html;
+  el.innerHTML = html;
+}
+
 /* 핀 하나 그리기 — 크기는 고정(사진 수와 무관) */
 function pinSvg(x, y, ph, color, i, on){
   const r = 8.0;
@@ -505,13 +525,16 @@ function drawScreen(){
     const [x,y] = R.px(p.lat,p.lon);
     pins += pinSvg(x, y, p.ph, `var(${CAT[p.k].c})`, i, i===openIdx);
   });
-  mapover.innerHTML = landmarkArt(R,sc) + pins + landmarkLabels(R,sc);
+  // 🔴 innerHTML 은 같은 그림이어도 SVG 를 다시 파싱한다 — 손끝이 걸리는 주범이었다.
+  //    그려 넣을 문자열이 지난번과 같으면 건드리지 않는다. (2026-09-09)
+  setSvg(mapover, landmarkArt(R,sc) + pins + landmarkLabels(R,sc));
 
   // 캐릭터 — 지도와 같은 크기의 화면 좌표계(원점 0,0)에 고정
   mapillust.setAttribute('viewBox', `0 0 ${vb[2].toFixed(1)} ${vb[3].toFixed(1)}`);
   // 원본 그림에서 오려 낸 후니·어니를 지도 구석에 세운다 (지역별로 다른 컷)
   // 캐릭터 둘을 핀이 가장 적은 두 구석에 나눠 세운다 (일러스트 레이어는 원점이 0,0)
-  mapillust.innerHTML = R.illust(vb[2], vb[3]) + charSpots(R, vs, vb);
+  // 캐릭터는 base64 스프라이트라 다시 심으면 이미지 디코드까지 새로 한다 — 더 아깝다
+  setSvg(mapillust, R.illust(vb[2], vb[3]) + charSpots(R, vs, vb));
 
   // 축척 바 — 지역마다 실제 거리로
   const barPx = R.scaleMeters / metersPerPx(R.map);
@@ -995,9 +1018,18 @@ function applyHash(){
 }
 addEventListener('hashchange', applyHash);
 
-/* 창 크기가 바뀌면 포스터 패널 비율도, 지도에 남는 높이도 달라진다 */
-let rt;
+/* 창 크기가 바뀌면 포스터 패널 비율도, 지도에 남는 높이도 달라진다.
+   🔴 모바일은 손가락으로 화면을 밀 때 주소창이 접히며 resize 가 계속 온다.
+      지도 높이는 innerHeight 로 재므로 그때마다 상자 비율이 바뀌고 지도를 다시 그렸다 —
+      손끝 아래에서 화면이 튀어 「이동이 버벅인다」로 느껴진 원인.
+      가로가 그대로면서 세로만 조금 달라진 건(=주소창) 무시한다. (2026-09-09)
+   화면 회전·창 크기 조절은 가로가 같이 바뀌거나 세로가 크게 달라지므로 그대로 반응한다. */
+const BAR_SLOP = 180;                       // 주소창·툴바가 접힐 때 달라지는 세로 폭
+let rt, lastVW = innerWidth, lastVH = innerHeight;
 addEventListener('resize', () => {
+  const dw = Math.abs(innerWidth - lastVW), dh = Math.abs(innerHeight - lastVH);
+  if (!dw && dh < BAR_SLOP) return;         // 주소창이 접힌 것뿐 — 다시 그릴 일이 아니다
+  lastVW = innerWidth; lastVH = innerHeight;
   clearTimeout(rt);
   rt = setTimeout(() => {
     if (fsNode) drawScreen();                  // 전체 화면 지도가 우선 — 뒤 포스터는 닫을 때 다시 그린다
