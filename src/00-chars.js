@@ -85,3 +85,43 @@ function freeSpots(box, w, h, obstacles, n, taken){
   return cands.slice(0, n || 1);
 }
 
+
+
+/* ══ 캐릭터를 직접 옮기기 ══════════════════════════════════════
+   자동 배치가 늘 맞을 수는 없다. 끌어서 옮기면 그 자리를 시트(스크립트 속성)에
+   저장해 두 사람이 같은 화면을 본다. 두 번 누르면 자동 배치로 돌아간다.
+   좌표는 지도 상자 대비 0~1 비율로 저장한다 — 확대·축소해도 자리가 유지된다. */
+let CHARPOS = {};                     // 서버에서 받아 온 자리들
+
+function charKey(where, region, slot){ return where + ':' + region + ':' + slot; }
+
+/** 저장된 자리가 있으면 그 좌표를, 없으면 null */
+function savedSpot(key, box, w, h){
+  const p = CHARPOS[key];
+  if (!p) return null;
+  const [bx, by, bw, bh] = box;
+  return { x: bx + p.x * (bw - w), y: by + p.y * (bh - h) };
+}
+
+/** 끌 수 있게 표시해 둔 캐릭터 */
+function charDraggable(spriteKey, key, box, x, y, w, opacity){
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[spriteKey];
+  if (!s) return '';
+  const h = w * s.h / s.w;
+  return `<image class="charmove" data-ck="${key}"
+    data-bx="${box[0]}" data-by="${box[1]}" data-bw="${box[2]}" data-bh="${box[3]}"
+    data-w="${w.toFixed(1)}" data-h="${h.toFixed(1)}"
+    href="data:${s.mime};base64,${s.b64}"
+    x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"
+    opacity="${opacity == null ? 1 : opacity}"/>`;
+}
+
+/** 옮긴 자리를 서버에 남긴다. x 를 비우면 자동 배치로 되돌린다. */
+function saveCharPos(key, fx, fy){
+  if (fx == null) delete CHARPOS[key];
+  else CHARPOS[key] = { x: fx, y: fy };
+  if (typeof WEB_APP === 'undefined') return;
+  const u = `${WEB_APP}?action=setCharPos&k=${encodeURIComponent(key)}`
+          + (fx == null ? '&x=' : `&x=${fx.toFixed(4)}&y=${fy.toFixed(4)}`);
+  fetch(u, { mode: 'no-cors' }).catch(() => {});
+}

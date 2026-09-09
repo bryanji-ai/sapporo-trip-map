@@ -653,6 +653,21 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   .ex-headface{height:62px}
 }
 
+
+/* ── 캐릭터 끌어 옮기기 ── */
+image.charmove{ pointer-events:auto; cursor:grab; touch-action:none; }
+image.charmove:hover{ filter:drop-shadow(0 2px 6px rgba(38,58,61,.28)); }
+image.charmove.dragging{ cursor:grabbing; opacity:.85 !important; }
+.char-toast{
+  position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom));
+  transform:translate(-50%, 14px); z-index:80;
+  background:rgba(38,32,26,.9); color:#FFFCF3;
+  font-size:12.5px; padding:9px 15px; border-radius:999px;
+  opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+}
+.char-toast.on{ opacity:1; transform:translate(-50%, 0); }
+@media (prefers-reduced-motion:reduce){ .char-toast{ transition:none } }
+
 </style>
 </head>
 <body>
@@ -864,6 +879,46 @@ function freeSpots(box, w, h, obstacles, n, taken){
   return cands.slice(0, n || 1);
 }
 
+
+
+/* ══ 캐릭터를 직접 옮기기 ══════════════════════════════════════
+   자동 배치가 늘 맞을 수는 없다. 끌어서 옮기면 그 자리를 시트(스크립트 속성)에
+   저장해 두 사람이 같은 화면을 본다. 두 번 누르면 자동 배치로 돌아간다.
+   좌표는 지도 상자 대비 0~1 비율로 저장한다 — 확대·축소해도 자리가 유지된다. */
+let CHARPOS = {};                     // 서버에서 받아 온 자리들
+
+function charKey(where, region, slot){ return where + ':' + region + ':' + slot; }
+
+/** 저장된 자리가 있으면 그 좌표를, 없으면 null */
+function savedSpot(key, box, w, h){
+  const p = CHARPOS[key];
+  if (!p) return null;
+  const [bx, by, bw, bh] = box;
+  return { x: bx + p.x * (bw - w), y: by + p.y * (bh - h) };
+}
+
+/** 끌 수 있게 표시해 둔 캐릭터 */
+function charDraggable(spriteKey, key, box, x, y, w, opacity){
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[spriteKey];
+  if (!s) return '';
+  const h = w * s.h / s.w;
+  return `<image class="charmove" data-ck="${key}"
+    data-bx="${box[0]}" data-by="${box[1]}" data-bw="${box[2]}" data-bh="${box[3]}"
+    data-w="${w.toFixed(1)}" data-h="${h.toFixed(1)}"
+    href="data:${s.mime};base64,${s.b64}"
+    x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"
+    opacity="${opacity == null ? 1 : opacity}"/>`;
+}
+
+/** 옮긴 자리를 서버에 남긴다. x 를 비우면 자동 배치로 되돌린다. */
+function saveCharPos(key, fx, fy){
+  if (fx == null) delete CHARPOS[key];
+  else CHARPOS[key] = { x: fx, y: fy };
+  if (typeof WEB_APP === 'undefined') return;
+  const u = `${WEB_APP}?action=setCharPos&k=${encodeURIComponent(key)}`
+          + (fx == null ? '&x=' : `&x=${fx.toFixed(4)}&y=${fy.toFixed(4)}`);
+  fetch(u, { mode: 'no-cors' }).catch(() => {});
+}
 
 /* ══════════════════════════════════════════════════════════════
    후니＆어니의 홋카이도 여행 기록 지도
@@ -2316,6 +2371,93 @@ document.getElementById('printview').addEventListener('click', e => {
 });
 
 
+/* ══ 캐릭터 끌어서 옮기기 ══════════════════════════════════════
+   SVG 안이라 화면 좌표를 뷰박스 좌표로 바꿔야 한다.
+   놓으면 상자 대비 0~1 비율로 저장해 두 사람이 같은 자리를 본다.
+   두 번 누르면 자동 배치로 되돌린다. */
+(function charDrag(){
+  let cur = null;
+
+  function toUser(svg, ev){
+    const m = svg.getScreenCTM();
+    if (!m) return null;
+    const p = svg.createSVGPoint();
+    p.x = ev.clientX; p.y = ev.clientY;
+    return p.matrixTransform(m.inverse());
+  }
+
+  document.addEventListener('pointerdown', e => {
+    const im = e.target.closest('image.charmove');
+    if (!im) return;
+    const svg = im.ownerSVGElement;
+    const q = toUser(svg, e);
+    if (!q) return;
+    e.preventDefault(); e.stopPropagation();
+    cur = {
+      im: im, svg: svg, moved: false,
+      dx: q.x - parseFloat(im.getAttribute('x')),
+      dy: q.y - parseFloat(im.getAttribute('y')),
+      w: parseFloat(im.dataset.w), h: parseFloat(im.dataset.h),
+      bx: parseFloat(im.dataset.bx), by: parseFloat(im.dataset.by),
+      bw: parseFloat(im.dataset.bw), bh: parseFloat(im.dataset.bh)
+    };
+    im.classList.add('dragging');
+    try { im.setPointerCapture(e.pointerId); } catch (_) {}
+  }, true);
+
+  document.addEventListener('pointermove', e => {
+    if (!cur) return;
+    const q = toUser(cur.svg, e);
+    if (!q) return;
+    const x = Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx));
+    const y = Math.max(cur.by, Math.min(cur.by + cur.bh - cur.h, q.y - cur.dy));
+    cur.im.setAttribute('x', x.toFixed(1));
+    cur.im.setAttribute('y', y.toFixed(1));
+    cur.moved = true;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+
+  function drop(e){
+    if (!cur) return;
+    const im = cur.im;
+    im.classList.remove('dragging');
+    if (cur.moved){
+      const x = parseFloat(im.getAttribute('x')), y = parseFloat(im.getAttribute('y'));
+      const fx = cur.bw - cur.w > 0 ? (x - cur.bx) / (cur.bw - cur.w) : 0;
+      const fy = cur.bh - cur.h > 0 ? (y - cur.by) / (cur.bh - cur.h) : 0;
+      saveCharPos(im.dataset.ck, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
+      toast('자리를 저장했어요 · 두 번 누르면 자동으로');
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+    }
+    cur = null;
+  }
+  document.addEventListener('pointerup', drop, true);
+  document.addEventListener('pointercancel', drop, true);
+
+  /* 두 번 누르면 자동 배치로 */
+  document.addEventListener('dblclick', e => {
+    const im = e.target.closest('image.charmove');
+    if (!im) return;
+    e.preventDefault(); e.stopPropagation();
+    saveCharPos(im.dataset.ck, null);
+    toast('자동 배치로 되돌렸어요');
+    if (TABS.print[1].classList.contains('on')) posterRefresh(); else drawScreen();
+  }, true);
+
+  function toast(msg){
+    let t = document.getElementById('charToast');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'charToast'; t.className = 'char-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('on'), 1800);
+  }
+})();
+
 /* ══ 인쇄본 크게 보기 — 확대·이동 ══════════════════════════════
    지도 탭을 끌어오지 않는다. 인쇄 탭에 이미 그려진 패널(대표 사진·연결선까지)을
    그대로 옮겨 와 확대해 본다. 지역 하나만(key) 또는 세 지역 전체(null).
@@ -2690,13 +2832,15 @@ function charSpots(R, vs, vb){
   if (!a) return '';
   const aw = W*0.225, ah = aw*a.h/a.w;
   const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
-  const first = freeSpots([0, 0, W, H], aw, ah, obs, 1)[0];
-  let out = charImg(CHAR_OF[R.key], first.x, first.y, aw);
+  const box = [0, 0, W, H];
+  const kA = charKey('map', R.key, 'a'), kB = charKey('map', R.key, 'b');
+
+  const first = savedSpot(kA, box, aw, ah) || freeSpots(box, aw, ah, obs, 1)[0];
+  let out = charDraggable(CHAR_OF[R.key], kA, box, first.x, first.y, aw);
   if (b){
-    // 이미 선 커플을 피해 다시 가장 빈 자리를 찾는다
-    const c = freeSpots([0, 0, W, H], bw2, bh2, obs, 1,
-                        [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
-    out += charImg(FACE_OF[R.key], c.x, c.y, bw2, 0.95);
+    const c = savedSpot(kB, box, bw2, bh2)
+      || freeSpots(box, bw2, bh2, obs, 1, [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
+    out += charDraggable(FACE_OF[R.key], kB, box, c.x, c.y, bw2, 0.95);
   }
   return out;
 }
@@ -2889,8 +3033,10 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const obs = spots.map(o => [o.x, o.y])
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
-    const c = freeSpots([bx, by, bw, bh], chW, chH, obs, 1)[0];
-    char = charImg(CHAR_OF[R.key], c.x, c.y, chW);
+    const box = [bx, by, bw, bh];
+    const key = charKey('print', R.key, 'a');
+    const c = savedSpot(key, box, chW, chH) || freeSpots(box, chW, chH, obs, 1)[0];
+    char = charDraggable(CHAR_OF[R.key], key, box, c.x, c.y, chW);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
@@ -3079,6 +3225,7 @@ async function loadPlaces(){
       return [];
     }
     LOAD.payload = data;
+    if (data && data.charPos) CHARPOS = data.charPos;   // 직접 옮겨 둔 캐릭터 자리
     return Array.isArray(data) ? data : (data.places || []);
   } catch(e){
     LOAD.error = 'NETWORK';

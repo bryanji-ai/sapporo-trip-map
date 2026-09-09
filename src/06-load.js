@@ -31,6 +31,7 @@ async function loadPlaces(){
       return [];
     }
     LOAD.payload = data;
+    if (data && data.charPos) CHARPOS = data.charPos;   // 직접 옮겨 둔 캐릭터 자리
     return Array.isArray(data) ? data : (data.places || []);
   } catch(e){
     LOAD.error = 'NETWORK';

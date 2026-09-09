@@ -635,3 +635,18 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   .p-footface{height:7.6cqw}
   .ex-headface{height:62px}
 }
+
+
+/* ── 캐릭터 끌어 옮기기 ── */
+image.charmove{ pointer-events:auto; cursor:grab; touch-action:none; }
+image.charmove:hover{ filter:drop-shadow(0 2px 6px rgba(38,58,61,.28)); }
+image.charmove.dragging{ cursor:grabbing; opacity:.85 !important; }
+.char-toast{
+  position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom));
+  transform:translate(-50%, 14px); z-index:80;
+  background:rgba(38,32,26,.9); color:#FFFCF3;
+  font-size:12.5px; padding:9px 15px; border-radius:999px;
+  opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+}
+.char-toast.on{ opacity:1; transform:translate(-50%, 0); }
+@media (prefers-reduced-motion:reduce){ .char-toast{ transition:none } }

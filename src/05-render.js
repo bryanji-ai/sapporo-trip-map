@@ -196,6 +196,93 @@ document.getElementById('printview').addEventListener('click', e => {
 });
 
 
+/* ══ 캐릭터 끌어서 옮기기 ══════════════════════════════════════
+   SVG 안이라 화면 좌표를 뷰박스 좌표로 바꿔야 한다.
+   놓으면 상자 대비 0~1 비율로 저장해 두 사람이 같은 자리를 본다.
+   두 번 누르면 자동 배치로 되돌린다. */
+(function charDrag(){
+  let cur = null;
+
+  function toUser(svg, ev){
+    const m = svg.getScreenCTM();
+    if (!m) return null;
+    const p = svg.createSVGPoint();
+    p.x = ev.clientX; p.y = ev.clientY;
+    return p.matrixTransform(m.inverse());
+  }
+
+  document.addEventListener('pointerdown', e => {
+    const im = e.target.closest('image.charmove');
+    if (!im) return;
+    const svg = im.ownerSVGElement;
+    const q = toUser(svg, e);
+    if (!q) return;
+    e.preventDefault(); e.stopPropagation();
+    cur = {
+      im: im, svg: svg, moved: false,
+      dx: q.x - parseFloat(im.getAttribute('x')),
+      dy: q.y - parseFloat(im.getAttribute('y')),
+      w: parseFloat(im.dataset.w), h: parseFloat(im.dataset.h),
+      bx: parseFloat(im.dataset.bx), by: parseFloat(im.dataset.by),
+      bw: parseFloat(im.dataset.bw), bh: parseFloat(im.dataset.bh)
+    };
+    im.classList.add('dragging');
+    try { im.setPointerCapture(e.pointerId); } catch (_) {}
+  }, true);
+
+  document.addEventListener('pointermove', e => {
+    if (!cur) return;
+    const q = toUser(cur.svg, e);
+    if (!q) return;
+    const x = Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx));
+    const y = Math.max(cur.by, Math.min(cur.by + cur.bh - cur.h, q.y - cur.dy));
+    cur.im.setAttribute('x', x.toFixed(1));
+    cur.im.setAttribute('y', y.toFixed(1));
+    cur.moved = true;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+
+  function drop(e){
+    if (!cur) return;
+    const im = cur.im;
+    im.classList.remove('dragging');
+    if (cur.moved){
+      const x = parseFloat(im.getAttribute('x')), y = parseFloat(im.getAttribute('y'));
+      const fx = cur.bw - cur.w > 0 ? (x - cur.bx) / (cur.bw - cur.w) : 0;
+      const fy = cur.bh - cur.h > 0 ? (y - cur.by) / (cur.bh - cur.h) : 0;
+      saveCharPos(im.dataset.ck, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
+      toast('자리를 저장했어요 · 두 번 누르면 자동으로');
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+    }
+    cur = null;
+  }
+  document.addEventListener('pointerup', drop, true);
+  document.addEventListener('pointercancel', drop, true);
+
+  /* 두 번 누르면 자동 배치로 */
+  document.addEventListener('dblclick', e => {
+    const im = e.target.closest('image.charmove');
+    if (!im) return;
+    e.preventDefault(); e.stopPropagation();
+    saveCharPos(im.dataset.ck, null);
+    toast('자동 배치로 되돌렸어요');
+    if (TABS.print[1].classList.contains('on')) posterRefresh(); else drawScreen();
+  }, true);
+
+  function toast(msg){
+    let t = document.getElementById('charToast');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'charToast'; t.className = 'char-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('on'), 1800);
+  }
+})();
+
 /* ══ 인쇄본 크게 보기 — 확대·이동 ══════════════════════════════
    지도 탭을 끌어오지 않는다. 인쇄 탭에 이미 그려진 패널(대표 사진·연결선까지)을
    그대로 옮겨 와 확대해 본다. 지역 하나만(key) 또는 세 지역 전체(null).
@@ -570,13 +657,15 @@ function charSpots(R, vs, vb){
   if (!a) return '';
   const aw = W*0.225, ah = aw*a.h/a.w;
   const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
-  const first = freeSpots([0, 0, W, H], aw, ah, obs, 1)[0];
-  let out = charImg(CHAR_OF[R.key], first.x, first.y, aw);
+  const box = [0, 0, W, H];
+  const kA = charKey('map', R.key, 'a'), kB = charKey('map', R.key, 'b');
+
+  const first = savedSpot(kA, box, aw, ah) || freeSpots(box, aw, ah, obs, 1)[0];
+  let out = charDraggable(CHAR_OF[R.key], kA, box, first.x, first.y, aw);
   if (b){
-    // 이미 선 커플을 피해 다시 가장 빈 자리를 찾는다
-    const c = freeSpots([0, 0, W, H], bw2, bh2, obs, 1,
-                        [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
-    out += charImg(FACE_OF[R.key], c.x, c.y, bw2, 0.95);
+    const c = savedSpot(kB, box, bw2, bh2)
+      || freeSpots(box, bw2, bh2, obs, 1, [{ x:first.x, y:first.y, w:aw, h:ah }])[0];
+    out += charDraggable(FACE_OF[R.key], kB, box, c.x, c.y, bw2, 0.95);
   }
   return out;
 }
@@ -769,8 +858,10 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
     const obs = spots.map(o => [o.x, o.y])
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
-    const c = freeSpots([bx, by, bw, bh], chW, chH, obs, 1)[0];
-    char = charImg(CHAR_OF[R.key], c.x, c.y, chW);
+    const box = [bx, by, bw, bh];
+    const key = charKey('print', R.key, 'a');
+    const c = savedSpot(key, box, chW, chH) || freeSpots(box, chW, chH, obs, 1)[0];
+    char = charDraggable(CHAR_OF[R.key], key, box, c.x, c.y, chW);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
