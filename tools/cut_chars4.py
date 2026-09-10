@@ -31,18 +31,22 @@ MAX_W    = 300
 
 # [행, 열] → 스프라이트 키 / 파일명. 없는 칸은 버린다(겨울 컷·이미 있는 컷).
 CELLS = {
-    (0, 0): ("cp-hi",           "char_hi"),
-    (0, 2): ("cp-couple-scarf", "char_couple-scarf"),
-    (1, 0): ("cp-fall-hat", "char_fall-hat"),
-    (1, 1): ("cp-tower",    "char_tower"),
-    (1, 3): ("cp-camera",   "char_camera"),
-    (2, 1): ("cp-snowman",  "char_snowman"),
-    (2, 2): ("cp-parfait",  "char_parfait"),
-    (2, 3): ("cp-lavender", "char_lavender"),
-    (3, 0): ("cp-night",    "char_night"),
-    (3, 1): ("cp-cocoa",    "char_cocoa"),
-    (3, 2): ("cp-map",      "char_map"),
-    (3, 3): ("cp-onsen",    "char_onsen"),
+    (0, 0): ("cp-c-passport",  "char_c-passport"),
+    (0, 1): ("cp-c-kaminari",  "char_c-kaminari"),
+    (0, 2): ("cp-c-icebar",    "char_c-icebar"),
+    (0, 3): ("cp-c-momiji",    "char_c-momiji"),
+    (1, 0): ("cp-c-fuji",      "char_c-fuji"),
+    (1, 1): ("cp-c-yukata",    "char_c-yukata"),
+    (1, 2): ("cp-c-neko",      "char_c-neko"),
+    (1, 3): ("cp-c-softcream", "char_c-softcream"),
+    (2, 0): ("cp-c-tower",     "char_c-tower"),
+    (2, 1): ("cp-c-onsen",     "char_c-onsen"),
+    (2, 2): ("cp-c-sunflower", "char_c-sunflower"),
+    (2, 3): ("cp-c-harbor",    "char_c-harbor"),
+    (3, 0): ("cp-c-tako",      "char_c-tako"),
+    (3, 1): ("cp-c-snowman",   "char_c-snowman"),
+    (3, 2): ("cp-c-sushi",     "char_c-sushi"),
+    (3, 3): ("cp-c-otaru",     "char_c-otaru"),
 }
 
 
@@ -112,21 +116,89 @@ def runs(counts, gap=GAP, minlen=6):
     return [r for r in out if r[1] - r[0] >= minlen]
 
 
-def main(src):
-    im = strip_checker(Image.open(src))
-    W, H = im.size
-    solid = im.getchannel("A").point(lambda v: 1 if v > SOLID else 0).tobytes()
-    faint = im.getchannel("A").point(lambda v: 1 if v > FAINT else 0).tobytes()
 
+NOISE = 20         # 이보다 작은 덩어리는 체커 찌꺼기로 본다
+JOIN  = 60         # 덩어리가 이만큼 가까우면 그 칸의 소품(하트·비행기·낙엽)으로 붙인다
+
+
+def blobs(solid, W, H):
+    """알파 덩어리를 (넓이, x0, x1, y0, y1) 로 훑는다."""
+    seen = bytearray(W * H)
+    out = []
+    for i in range(W * H):
+        if not solid[i] or seen[i]:
+            continue
+        q = deque([i]); seen[i] = 1
+        x0 = x1 = i % W; y0 = y1 = i // W; n = 0
+        while q:
+            j = q.popleft(); n += 1
+            y, x = divmod(j, W)
+            if x < x0: x0 = x
+            if x > x1: x1 = x
+            if y < y0: y0 = y
+            if y > y1: y1 = y
+            for k, ok in ((j-1, x > 0), (j+1, x < W-1), (j-W, y > 0), (j+W, y < H-1)):
+                if solid[k] and ok and not seen[k]:
+                    seen[k] = 1; q.append(k)
+        out.append((n, x0, x1, y0, y1))
+    return out
+
+
+def grid_by_blobs(solid, W, H):
+    """칸끼리 맞닿아 투영으로 못 자르는 시트용 — 큰 덩어리 16개를 격자에 앉힌다.
+
+    투영(runs)은 「빈 줄」이 있어야 자른다. 그림 넷이 어깨를 맞대고 있으면
+    빈 줄이 없어 4칸으로 안 갈린다. 칸마다 덩어리가 하나씩은 크게 있으니
+    그 16개를 세로·가로로 줄 세워 (행, 열) 을 매기고, 하트·비행기·낙엽처럼
+    떨어져 나온 조각은 가장 가까운 칸에 얹는다."""
+    cs = [c for c in blobs(solid, W, H) if c[0] >= NOISE]
+    if len(cs) < 16:
+        return None
+    cs.sort(reverse=True)
+    anchors, rest = cs[:16], cs[16:]
+
+    box = {}
+    anchors.sort(key=lambda c: c[3] + c[4])                     # 세로 중심 → 4행
+    for r in range(4):
+        for c, a in enumerate(sorted(anchors[r*4:(r+1)*4],
+                                     key=lambda c: c[1] + c[2])):  # 가로 중심 → 4열
+            box[(r, c)] = [a[1], a[2], a[3], a[4]]
+
+    for _, x0, x1, y0, y1 in rest:
+        near, best = None, None
+        for rc, b in box.items():
+            dx = max(b[0] - x1, x0 - b[1], 0)
+            dy = max(b[2] - y1, y0 - b[3], 0)
+            d = dx*dx + dy*dy
+            if best is None or d < best:
+                near, best = rc, d
+        if best > JOIN * JOIN:
+            continue
+        b = box[near]
+        b[0] = min(b[0], x0); b[1] = max(b[1], x1)
+        b[2] = min(b[2], y0); b[3] = max(b[3], y1)
+
+    # 숨통(PAD)을 주되 이웃을 물지 않게 — 두 칸 사이 한가운데까지만
+    out = {}
+    for (r, c), b in box.items():
+        l, rt = box.get((r, c-1)), box.get((r, c+1))
+        u, d  = box.get((r-1, c)), box.get((r+1, c))
+        out[(r, c)] = (max(b[0] - PAD, (l[1] + b[0])//2 + 1 if l else 0),
+                       min(b[1] + PAD, (b[1] + rt[0])//2 - 1 if rt else W - 1),
+                       max(b[2] - PAD, (u[3] + b[2])//2 + 1 if u else 0),
+                       min(b[3] + PAD, (b[3] + d[2])//2 - 1 if d else H - 1))
+    return out
+
+
+def grid_by_bands(solid, W, H):
+    """빈 줄이 있는 시트 — 행 투영으로 4줄, 행마다 열 투영으로 4칸."""
     rows = [sum(solid[y*W:(y+1)*W]) for y in range(H)]
     bands = runs(rows)
     print("행 밴드:", bands)
     if len(bands) != 4:
-        sys.exit(f"행이 4개로 갈리지 않습니다: {bands}")
+        return None
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    sprites = json.loads(SPRITES.read_text(encoding="utf-8"))
-
+    out = {}
     for r, (y0, y1) in enumerate(bands):
         # 칸 사이 틈은 행마다 다르다 (옆 칸으로 팔·간판이 삐져나온다) — 좁혀 가며 찾는다
         cols = [sum(solid[y*W + x] for y in range(y0, y1 + 1)) for x in range(W)]
@@ -136,42 +208,62 @@ def main(src):
                 break
         print(f"{r}행 칸(gap={gap}):", cells)
         if len(cells) != 4:
-            sys.exit(f"{r}행이 4칸으로 갈리지 않습니다: {cells}")
-
+            return None
         for c, (x0, x1) in enumerate(cells):
-            want = CELLS.get((r, c))
-            if not want:
-                print(f"  [{r},{c}] 건너뜀")
-                continue
-            key, name = want
+            out[(r, c)] = (x0, x1, y0, y1)
+    return out
 
-            lx, rx, ty, by = x1, x0, y1, y0
-            for y in range(y0, y1 + 1):
-                base = y * W
-                for x in range(x0, x1 + 1):
-                    if faint[base + x]:
-                        if x < lx: lx = x
-                        if x > rx: rx = x
-                        if y < ty: ty = y
-                        if y > by: by = y
-            box = (max(x0, lx - PAD), max(y0, ty - PAD),
-                   min(x1, rx + PAD) + 1, min(y1, by + PAD) + 1)
-            cut = im.crop(box)
 
-            band = cut.getchannel("A").point(lambda v: 0 if v < FAINT else v)
-            cut.putalpha(band)
-            cut.save(OUT_DIR / f"{name}.png")
+def main(src):
+    im = strip_checker(Image.open(src))
+    W, H = im.size
+    solid = im.getchannel("A").point(lambda v: 1 if v > SOLID else 0).tobytes()
+    faint = im.getchannel("A").point(lambda v: 1 if v > FAINT else 0).tobytes()
 
-            w, h = cut.size
-            sc = min(TARGET_H / h, MAX_W / w)
-            small = cut.resize((round(w * sc), round(h * sc)), Image.LANCZOS)
-            buf = io.BytesIO()
-            small.save(buf, "WEBP", quality=82, method=6)
-            sprites[key] = {"w": small.width, "h": small.height,
-                            "mime": "image/webp",
-                            "b64": base64.b64encode(buf.getvalue()).decode()}
-            print(f"  [{r},{c}] {name}.png {w}x{h}  →  {key} "
-                  f"{small.width}x{small.height} {len(buf.getvalue())//1024}KB")
+    grid = grid_by_bands(solid, W, H)
+    if grid is None:
+        print("투영으로 안 갈립니다 — 덩어리로 격자를 잡습니다")
+        grid = grid_by_blobs(solid, W, H)
+    if grid is None or len(grid) != 16:
+        sys.exit("4x4 격자를 잡지 못했습니다")
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    sprites = json.loads(SPRITES.read_text(encoding="utf-8"))
+
+    for (r, c), (x0, x1, y0, y1) in sorted(grid.items()):
+        want = CELLS.get((r, c))
+        if not want:
+            print(f"  [{r},{c}] 건너뜀")
+            continue
+        key, name = want
+
+        lx, rx, ty, by = x1, x0, y1, y0
+        for y in range(y0, y1 + 1):
+            base = y * W
+            for x in range(x0, x1 + 1):
+                if faint[base + x]:
+                    if x < lx: lx = x
+                    if x > rx: rx = x
+                    if y < ty: ty = y
+                    if y > by: by = y
+        box = (max(x0, lx - PAD), max(y0, ty - PAD),
+               min(x1, rx + PAD) + 1, min(y1, by + PAD) + 1)
+        cut = im.crop(box)
+
+        band = cut.getchannel("A").point(lambda v: 0 if v < FAINT else v)
+        cut.putalpha(band)
+        cut.save(OUT_DIR / f"{name}.png")
+
+        w, h = cut.size
+        sc = min(TARGET_H / h, MAX_W / w)
+        small = cut.resize((round(w * sc), round(h * sc)), Image.LANCZOS)
+        buf = io.BytesIO()
+        small.save(buf, "WEBP", quality=82, method=6)
+        sprites[key] = {"w": small.width, "h": small.height,
+                        "mime": "image/webp",
+                        "b64": base64.b64encode(buf.getvalue()).decode()}
+        print(f"  [{r},{c}] {name}.png {w}x{h}  →  {key} "
+              f"{small.width}x{small.height} {len(buf.getvalue())//1024}KB")
 
     SPRITES.write_text(json.dumps(sprites, ensure_ascii=False, indent=1) + "\n",
                        encoding="utf-8")
