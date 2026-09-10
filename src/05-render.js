@@ -1239,7 +1239,7 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
     char = charPlace(roster, 'print', R.key, [bx, by, bw, bh],
-                     { main: chW, face: chW*0.6, prop: bw*0.12 }, obs);
+                     { main: chW, face: chW*0.89, prop: chW*0.89 }, obs);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);

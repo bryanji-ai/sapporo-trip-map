@@ -31,11 +31,17 @@ MAX_W    = 300
 
 # [행, 열] → 스프라이트 키 / 파일명. 없는 칸은 버린다(겨울 컷·이미 있는 컷).
 CELLS = {
+    (0, 0): ("cp-hi",           "char_hi"),
+    (0, 2): ("cp-couple-scarf", "char_couple-scarf"),
     (1, 0): ("cp-fall-hat", "char_fall-hat"),
+    (1, 1): ("cp-tower",    "char_tower"),
     (1, 3): ("cp-camera",   "char_camera"),
+    (2, 1): ("cp-snowman",  "char_snowman"),
     (2, 2): ("cp-parfait",  "char_parfait"),
     (2, 3): ("cp-lavender", "char_lavender"),
     (3, 0): ("cp-night",    "char_night"),
+    (3, 1): ("cp-cocoa",    "char_cocoa"),
+    (3, 2): ("cp-map",      "char_map"),
     (3, 3): ("cp-onsen",    "char_onsen"),
 }
 

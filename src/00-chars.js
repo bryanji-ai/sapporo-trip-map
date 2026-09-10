@@ -33,6 +33,8 @@ const CHAR_NAMES = {
   'cp-yakiniku':'야키니쿠', 'cp-icecream':'아이스크림','cp-parfait':'파르페',
   'cp-autumn':'단풍',       'cp-fall-hat':'단풍비니',  'cp-lavender':'라벤더',
   'cp-camera':'카메라',
+  'cp-hi':'반가워요',    'cp-couple-scarf':'목도리커플', 'cp-tower':'타워뷰',
+  'cp-snowman':'눈사람', 'cp-cocoa':'핫코코아',          'cp-map':'지도보기',
   'couple':'둘이서', 'ramen':'라멘 한 그릇', 'hat':'모자', 'scarf':'목도리',
   'erni-a':'어니 ①','erni-b':'어니 ②','erni-c':'어니 ③','erni-d':'어니 ④',
   'hooni-a':'후니 ①','hooni-b':'후니 ②','hooni-c':'후니 ③','hooni-d':'후니 ④',
@@ -45,6 +47,7 @@ const CHAR_PICK_ALL = [
   'cp-guide','cp-ramen','cp-beer','cp-susukino','cp-night','cp-onsen',
   'cp-yakiniku','cp-icecream','cp-parfait',
   'cp-autumn','cp-fall-hat','cp-lavender','cp-camera',
+  'cp-hi','cp-couple-scarf','cp-tower','cp-snowman','cp-cocoa','cp-map',
   'couple','ramen','hat','scarf',
   'erni-a','erni-b','erni-c','erni-d','hooni-a','hooni-b','hooni-c','hooni-d',
 ];
