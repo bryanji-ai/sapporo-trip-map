@@ -14,7 +14,7 @@ const CHAR_OF = { sapporo:'cp-guide', otaru:'couple', biei:'hat' };
 const FACE_OF = { sapporo:'hooni-a', otaru:'erni-b', biei:'erni-d' };
 
 /* 지역마다 곁들이는 소품 커플들 — 그 지역에서 할 일이 그림으로 보이게 한다.
-   여기도 초가을 컷만 쓴다 (눈꽃 타워·눈사람 컷은 아예 오려 오지 않았다).
+   여기도 초가을 컷만 쓴다 — 눈꽃 타워·눈사람 컷은 골라 쓸 수만 있게 두고 기본엔 안 세운다.
    앞의 두 컷은 인쇄 패널에도 그대로 실린다 (05-render.js 에서 slice(0,2)) —
    그 지역을 한 장으로 대표하는 컷을 앞에 둔다. */
 const EXTRA_CHARS = {
@@ -35,6 +35,7 @@ const CHAR_NAMES = {
   'cp-camera':'카메라',
   'cp-hi':'반가워요',    'cp-couple-scarf':'목도리커플', 'cp-tower':'타워뷰',
   'cp-snowman':'눈사람', 'cp-cocoa':'핫코코아',          'cp-map':'지도보기',
+  'cp-tower-b':'타워눈꽃', 'cp-snowman-b':'눈사람2',
   'couple':'둘이서', 'ramen':'라멘 한 그릇', 'hat':'모자', 'scarf':'목도리',
   'erni-a':'어니 ①','erni-b':'어니 ②','erni-c':'어니 ③','erni-d':'어니 ④',
   'hooni-a':'후니 ①','hooni-b':'후니 ②','hooni-c':'후니 ③','hooni-d':'후니 ④',
@@ -48,6 +49,7 @@ const CHAR_PICK_ALL = [
   'cp-yakiniku','cp-icecream','cp-parfait',
   'cp-autumn','cp-fall-hat','cp-lavender','cp-camera',
   'cp-hi','cp-couple-scarf','cp-tower','cp-snowman','cp-cocoa','cp-map',
+  'cp-tower-b','cp-snowman-b',
   'couple','ramen','hat','scarf',
   'erni-a','erni-b','erni-c','erni-d','hooni-a','hooni-b','hooni-c','hooni-d',
 ];

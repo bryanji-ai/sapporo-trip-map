@@ -78,6 +78,18 @@
       "accessCount": 1,
       "lastAccessed": 1788994204505,
       "type": "file"
+    },
+    {
+      "path": "assets/chars/char_tower-b.png",
+      "accessCount": 1,
+      "lastAccessed": 1789001275235,
+      "type": "file"
+    },
+    {
+      "path": "assets/chars/char_snowman-b.png",
+      "accessCount": 1,
+      "lastAccessed": 1789001275485,
+      "type": "file"
     }
   ],
   "userDirectives": []

@@ -22,16 +22,16 @@ PAD = 6            # 잘라 낸 그림 주위에 남기는 숨통
 TARGET_H = 210     # 스프라이트 저장 높이 (기존 커플 컷과 같은 눈높이)
 MAX_W = 300
 
-# [행, 열] → 스프라이트 키 / 파일명. 겨울 컷(모자·눈사람)은 9월 여행이라 버린다.
+# [행, 열] → 스프라이트 키 / 파일명. 겨울 컷도 그림체가 달라 -b 로 따로 담는다.
 CELLS = {
     (0, 0): ("cp-ramen",    "char_ramen"),
-    (0, 1): None,                              # 삿포로타워 + 눈꽃 — 겨울
+    (0, 1): ("cp-tower-b",  "char_tower-b"),   # 삿포로타워 + 눈꽃
     (0, 2): ("cp-beer",     "char_beer"),
     (1, 0): ("cp-autumn",   "char_autumn"),
     (1, 1): ("cp-yakiniku", "char_yakiniku"),
     (1, 2): ("cp-icecream", "char_icecream"),
     (2, 0): ("cp-susukino", "char_susukino"),
-    (2, 1): None,                              # 눈사람 — 겨울
+    (2, 1): ("cp-snowman-b", "char_snowman-b"), # 눈사람
     (2, 2): ("cp-guide",    "char_guide"),
 }
 
