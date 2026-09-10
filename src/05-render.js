@@ -1048,7 +1048,7 @@ function charSpots(R, vs, vb){
     .concat(overlayObs(vb));
 
   return charPlace(charRoster('map', R.key), 'map', R.key, [0, 0, W, H],
-                   { main: W*0.225, face: W*0.135, prop: W*0.125 }, obs);
+                   { main: W*0.225, face: W*0.20, prop: W*0.20 }, obs);
 }
 
 /* ══ 지도 전체 화면 — 인쇄 탭의 지도 패널을 누르면 열린다 ══
