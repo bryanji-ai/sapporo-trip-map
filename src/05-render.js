@@ -196,32 +196,32 @@ document.getElementById('printview').addEventListener('click', e => {
 });
 
 
-/* ══ 캐릭터 끌어서 옮기기 ══════════════════════════════════════
-   SVG 안이라 화면 좌표를 뷰박스 좌표로 바꿔야 한다.
-   놓으면 상자 대비 0~1 비율로 저장해 두 사람이 같은 자리를 본다.
-   두 번 누르면 자동 배치로 되돌린다.
+/* ══ 캐릭터 만지기 — 끌기 · 꾹 누르기 · 지우기 ══════════════════
+   ① 끌기      자리를 옮긴다. SVG 안이라 화면 좌표를 뷰박스 좌표로 바꿔야 한다.
+                놓으면 상자 대비 0~1 비율로 저장해 두 사람이 같은 자리를 본다.
+   ② 꾹 누르기 캐릭터 위 → 「캐릭터 변경」, 빈 곳 → 「캐릭터 추가」.
+                살짝이라도 움직이면 끌기로 넘어간다 (타이머를 그때 끈다).
+   ③ 지우기    캐릭터에 손을 얹으면 오른쪽 위에 ✕ 가 뜬다.
 
-   🔴 모바일에서 안 되던 이유 (2026-09-09)
+   🔴 모바일에서 끌기가 안 되던 이유 (2026-09-09)
       image.charmove 에 touch-action:none 을 써 두었지만 **SVG 자식 요소에는 touch-action 이
       먹지 않는다** — 브라우저는 CSS 박스를 만드는 요소에만 이 값을 본다. 그래서 손가락을
       대면 브라우저가 「페이지를 미는 중」으로 보고 첫 이동에서 포인터를 가져가며
       pointercancel 을 던졌고, 그게 drop() 을 불러 드래그가 시작하자마자 끝났다.
       (헤드리스 크롬 터치 재현: pointerdown → touchstart → touchmove → pointercancel)
 
-      고친 방법 세 가지
+      고친 방법 두 가지
       ① 캐릭터 위에서 시작한 touchstart 를 non-passive 로 받아 preventDefault 한다.
          touch-action 과 달리 이건 SVG 에서도 확실히 듣는다.
       ② 포인터 이벤트가 오다 말아도 끌리도록 알맹이(begin/drag/end)를 입력 종류와 분리했다.
-         먼저 잡은 쪽(pointer 또는 touch)이 끝까지 끌고, 손가락이 다 떨어지면 반드시 끝난다.
-      ③ touchstart 를 막으면 iOS 의 「이미지 저장」 팝업과 함께 dblclick 도 오지 않으므로
-         두 번 탭은 여기서 직접 센다. 탭의 미세한 흔들림(4px)은 이동으로 치지 않는다. */
+         먼저 잡은 쪽(pointer 또는 touch)이 끝까지 끌고, 손가락이 다 떨어지면 반드시 끝난다. */
 (function charDrag(){
-  const SLOP   = 4;               // 이만큼 움직여야 「끄는 중」으로 본다 (탭 흔들림 무시)
-  const TAP_MS = 320;             // 두 번 탭으로 인정하는 간격
-  let cur = null;                 // 지금 끌고 있는 캐릭터 — 한 번에 하나만
-  let raf = 0;
-  let lastTap = { t: 0, key: '' };
-  let lastReset = 0;
+  const SLOP    = 4;              // 이만큼 움직여야 「끄는 중」으로 본다 (탭 흔들림 무시)
+  const HOLD_MS = 500;            // 이만큼 누르고 있으면 「꾹 누르기」
+  let cur  = null;                // 지금 끌고 있는 캐릭터 — 한 번에 하나만
+  let raf  = 0;
+  let hold = 0;                   // 캐릭터 위 꾹 누르기 타이머
+  let spot = null;                // 빈 곳 꾹 누르기 {x, y, t}
 
   function charAt(t){ return t && t.closest ? t.closest('image.charmove') : null; }
 
@@ -241,12 +241,13 @@ document.getElementById('printview').addEventListener('click', e => {
   /* ── 입력 종류와 상관없는 알맹이 ── */
   function begin(im, x, y, opt){
     if (cur) return false;                       // 두 번째 손가락은 무시한다
+    if (charPickNode) return false;              // 고르기 팝업이 떠 있는 동안은 안 끈다
     const svg = im.ownerSVGElement;
     if (!svg) return false;
     const q = toUser(svg, x, y);
     if (!q) return false;
     cur = {
-      im: im, svg: svg, id: opt.id, src: opt.src, touch: opt.touch,
+      im: im, svg: svg, id: opt.id, src: opt.src,
       moved: false, sx: x, sy: y,
       dx: q.x - parseFloat(im.getAttribute('x')),
       dy: q.y - parseFloat(im.getAttribute('y')),
@@ -261,12 +262,15 @@ document.getElementById('printview').addEventListener('click', e => {
     document.addEventListener('touchmove',    onTouchMove,   { passive:false, capture:true });
     document.addEventListener('touchend',     onTouchEnd,    true);
     document.addEventListener('touchcancel',  onTouchEnd,    true);
+    holdArm();
     return true;
   }
 
   function drag(x, y){
     if (!cur) return;
     if (!cur.moved && Math.hypot(x - cur.sx, y - cur.sy) < SLOP) return;
+    holdOff();                                      // 움직였으면 꾹 누르기가 아니다
+    charXHide();
     const q = toUser(cur.svg, x, y);
     if (!q) return;
     cur.at = [Math.max(cur.bx, Math.min(cur.bx + cur.bw - cur.w, q.x - cur.dx)),
@@ -282,51 +286,57 @@ document.getElementById('printview').addEventListener('click', e => {
   }
   function paint(){ raf = 0; apply(cur); }
 
-  function end(e){
-    if (!cur) return;
+  /** 끌기를 접는다. 저장은 하지 않는다 — end() 와 꾹 누르기가 함께 쓴다. */
+  function letGo(){
     const c = cur; cur = null;                      // 되불려도 한 번만 끝나게
+    holdOff();
     document.removeEventListener('pointermove', onPointerMove, true);
     document.removeEventListener('touchmove',   onTouchMove,   true);
     document.removeEventListener('touchend',    onTouchEnd,    true);
     document.removeEventListener('touchcancel', onTouchEnd,    true);
     if (raf){ cancelAnimationFrame(raf); raf = 0; }
-    apply(c);                                       // 마지막 좌표를 놓치지 않게 바로 반영
-    c.im.classList.remove('dragging');
-    try { c.im.releasePointerCapture(c.id); } catch (_) {}
+    if (c){
+      apply(c);                                     // 마지막 좌표를 놓치지 않게 바로 반영
+      c.im.classList.remove('dragging');
+      try { c.im.releasePointerCapture(c.id); } catch (_) {}
+    }
+    return c;
+  }
 
+  function end(e){
+    if (!cur) return;
+    const c = letGo();
     if (c.moved){
       const x = parseFloat(c.im.getAttribute('x')), y = parseFloat(c.im.getAttribute('y'));
       const fx = c.bw - c.w > 0 ? (x - c.bx) / (c.bw - c.w) : 0;
       const fy = c.bh - c.h > 0 ? (y - c.by) / (c.bh - c.h) : 0;
       saveCharPos(c.im.dataset.ck, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
-      toast('자리를 저장했어요 · 두 번 누르면 자동으로');
+      charToast('자리를 저장했어요 · 꾹 누르면 다른 캐릭터로');
       if (e){ e.preventDefault(); e.stopPropagation(); }
-    } else if (c.touch){
-      // 터치에는 dblclick 이 오지 않는다 — 두 번 탭을 여기서 센다
-      const now = Date.now(), k = c.im.dataset.ck;
-      if (now - lastTap.t < TAP_MS && lastTap.key === k){
-        lastTap = { t:0, key:'' };
-        resetAuto(c.im);
-      } else {
-        lastTap = { t: now, key: k };
-      }
     }
   }
 
-  function resetAuto(im){
-    if (Date.now() - lastReset < 400) return;   // 두 번 탭과 dblclick 이 겹쳐 와도 한 번만
-    lastReset = Date.now();
-    saveCharPos(im.dataset.ck, null);
-    toast('자동 배치로 되돌렸어요');
-    if (TABS.print[1].classList.contains('on')) posterRefresh(); else drawScreen();
+  /* ── 캐릭터를 꾹 누르면 「캐릭터 변경」 ── */
+  function holdArm(){
+    holdOff();
+    hold = setTimeout(() => {
+      hold = 0;
+      if (!cur || cur.moved) return;
+      const im = cur.im;
+      letGo();                                      // 드래그는 취소하고 팝업만 남긴다
+      charEatClick();                               // 뒤따라 오는 click 은 삼킨다
+      const p = charKeyParts(im.dataset.ck);
+      openCharPicker({ mode:'swap', where:p.where, region:p.region,
+                       key: im.dataset.ck, current: im.dataset.sp });
+    }, HOLD_MS);
   }
+  function holdOff(){ if (hold){ clearTimeout(hold); hold = 0; } }
 
   /* ── 포인터 이벤트 ── */
   document.addEventListener('pointerdown', e => {
     const im = charAt(e.target);
     if (!im) return;
-    if (!begin(im, e.clientX, e.clientY,
-               { id: e.pointerId, src: 'pointer', touch: e.pointerType !== 'mouse' })) return;
+    if (!begin(im, e.clientX, e.clientY, { id: e.pointerId, src: 'pointer' })) return;
     e.preventDefault(); e.stopPropagation();      // 지도·인쇄본의 팬/줌이 같이 반응하지 않게
     try { im.setPointerCapture(e.pointerId); } catch (_) {}
   }, true);
@@ -352,7 +362,7 @@ document.getElementById('printview').addEventListener('click', e => {
     if (e.cancelable) e.preventDefault();
     if (cur) return;                              // pointerdown 이 이미 잡았다
     const t = e.changedTouches[0];
-    if (t) begin(im, t.clientX, t.clientY, { id: t.identifier, src: 'touch', touch: true });
+    if (t) begin(im, t.clientX, t.clientY, { id: t.identifier, src: 'touch' });
   }, { passive:false, capture:true });
 
   function onTouchMove(e){
@@ -368,27 +378,271 @@ document.getElementById('printview').addEventListener('click', e => {
     end(e);                                        // pointerup 이 안 와도 여기서 반드시 끝난다
   }
 
-  /* 두 번 누르면 자동 배치로 (마우스) */
-  document.addEventListener('dblclick', e => {
-    const im = charAt(e.target);
-    if (!im) return;
-    e.preventDefault(); e.stopPropagation();
-    resetAuto(im);
+  /* ── 지도 빈 곳을 꾹 누르면 「캐릭터 추가」 ──
+        캐릭터·핀·겹쳐 둔 단추 위에서 시작한 건 빼고, 정말 빈 지면만 센다.
+        캐릭터는 mapillust 레이어(원점 0,0)에 서므로 그 좌표계로 눌린 곳을 옮겨 둔다. */
+  function spotOff(){ if (spot){ clearTimeout(spot.t); spot = null; } }
+
+  /* 🔴 mapwrap 은 이 파일 아래쪽에서 const 로 잡힌다 — 여기서 바로 쓰면 초기화 전 참조다.
+        document 에 걸고 눌린 곳이 지도 안인지 그때 확인한다. 전체 화면으로 옮겨 가도 그대로 듣는다. */
+  document.addEventListener('pointerdown', e => {
+    spotOff();
+    if (charPickNode || cur || charAt(e.target)) return;
+    if (!e.target.closest || !e.target.closest('.mapwrap')) return;
+    // .mapstate(사진 없음·불러오는 중 안내)는 막지 않는다 — 사진이 한 장도 없는 여행 첫날에도
+    // 캐릭터는 세울 수 있어야 하는데, 그때가 바로 저 안내가 지도를 덮고 있는 때다.
+    if (e.target.closest('.pin, .regionsw, .scalebar, button, a')) return;
+    const x = e.clientX, y = e.clientY;
+    spot = { x: x, y: y, t: setTimeout(() => {
+      spot = null;
+      const q = toUser(mapillust, x, y);
+      charEatClick();                              // 손을 떼며 나는 click 이 시트를 닫지 않게
+      openCharPicker({ mode:'add', where:'map', region: current,
+                       at: q ? [q.x, q.y] : null });
+    }, HOLD_MS) };
   }, true);
 
-  function toast(msg){
-    let t = document.getElementById('charToast');
-    if (!t){
-      t = document.createElement('div');
-      t.id = 'charToast'; t.className = 'char-toast';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.classList.add('on');
-    clearTimeout(t._h);
-    t._h = setTimeout(() => t.classList.remove('on'), 1800);
-  }
+  document.addEventListener('pointermove', e => {
+    if (spot && Math.hypot(e.clientX - spot.x, e.clientY - spot.y) > SLOP) spotOff();
+  }, true);
+  ['pointerup','pointercancel'].forEach(t => document.addEventListener(t, spotOff, true));
+  addEventListener('scroll', spotOff, true);
 })();
+
+/* ── 알림 한 줄 ── */
+function charToast(msg){
+  let t = document.getElementById('charToast');
+  if (!t){
+    t = document.createElement('div');
+    t.id = 'charToast'; t.className = 'char-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+/* 꾹 누르고 손을 떼면 click 이 따라 나온다 — 그게 시트를 닫거나 인쇄본을 열지 않게 한 번 삼킨다.
+   팝업 안의 클릭은 통과시킨다 (팝업을 바로 누를 수도 있어야 하므로). */
+function charEatClick(){
+  const kill = e => {
+    if (e.target.closest && e.target.closest('.char-pick')) return;
+    e.preventDefault(); e.stopPropagation();
+  };
+  document.addEventListener('click', kill, true);
+  setTimeout(() => document.removeEventListener('click', kill, true), 400);
+}
+
+/* 캐릭터를 손댄 뒤 다시 그린다 — 지금 보고 있는 화면만 */
+function charRedraw(){
+  charXHide();
+  if (!fsNode && TABS.print[1].classList.contains('on')) posterRefresh();
+  else drawScreen();
+}
+
+/* ══ 지우기 단추 ══════════════════════════════════════════════
+   SVG 안에 넣으면 끌 때마다 같이 옮겨야 하고 터치 타겟도 작아진다.
+   화면 위에 뜬 HTML 단추 하나를 캐릭터 오른쪽 위로 옮겨 다니게 한다.
+   단추는 SVG 밖이라 charmove 로 잡히지 않는다 — 눌러도 끌기가 시작되지 않는다. */
+let charXBtn = null, charXFor = null;
+
+function charXEl(){
+  if (charXBtn) return charXBtn;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'char-x';
+  b.setAttribute('aria-label', '이 캐릭터 지우기');
+  b.innerHTML = '<i aria-hidden="true">✕</i>';
+  b.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    const im = charXFor;
+    charXHide();
+    if (!im || !im.dataset.ck) return;
+    const key = im.dataset.ck;
+    im.remove();                        // 다시 그리기 전에 눈에서 먼저 사라지게
+    charRemove(key);
+    charToast('캐릭터를 삭제했어요 · 빈 곳을 꾹 누르면 다시 추가');
+    charRedraw();
+  });
+  document.body.appendChild(b);
+  return (charXBtn = b);
+}
+
+function charXShow(im){
+  if (charPickNode) return;
+  const r = im.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const b = charXEl();
+  charXFor = im;
+  b.dataset.ck = im.dataset.ck;
+  b.style.left = Math.max(2, Math.min(innerWidth  - 46, r.right - 30)) + 'px';
+  b.style.top  = Math.max(2, Math.min(innerHeight - 46, r.top   - 12)) + 'px';
+  b.classList.add('on');
+}
+function charXHide(){
+  charXFor = null;
+  if (charXBtn) charXBtn.classList.remove('on');
+}
+
+/* 마우스는 얹으면, 손가락은 대면 뜬다 — 둘 다 pointerover 하나로 받는다 */
+document.addEventListener('pointerover', e => {
+  if (!e.target || !e.target.closest) return;
+  const im = e.target.closest('image.charmove');
+  if (im){ charXShow(im); return; }
+  if (e.target.closest('.char-x')) return;        // 단추 위로 건너간 것뿐이다
+  charXHide();
+}, true);
+document.addEventListener('pointerdown', e => {   // 딴 데를 누르면 접는다
+  if (e.target && e.target.closest &&
+      (e.target.closest('.char-x') || e.target.closest('image.charmove'))) return;
+  charXHide();
+}, true);
+addEventListener('scroll', charXHide, true);
+addEventListener('resize', charXHide);
+
+/* ══ 캐릭터 고르기 팝업 ════════════════════════════════════════
+   빈 곳을 꾹 누르면 「추가」, 캐릭터를 꾹 누르면 「변경」으로 열린다.
+   SVG 안에 그리면 크기·글꼴이 지도 배율에 끌려 다닌다 — 화면 위에 얹는 HTML 로 둔다. */
+let charPickNode = null;
+
+function closeCharPicker(){
+  if (!charPickNode) return;
+  document.removeEventListener('keydown', charPickNode._key, true);
+  charPickNode.remove();
+  charPickNode = null;
+}
+
+function openCharPicker(o){
+  closeCharPicker();
+  charXHide();
+  if (typeof SPRITES === 'undefined') return;
+  const add  = o.mode === 'add';
+  const here = charPlacedSprites(o.where, o.region);
+  /* 추가는 그 지역 소품 목록이 기본이다. 주인공·얼굴 컷도 뒤에 붙여
+     한 번 지운 뒤에도 다시 불러올 수 있게 한다. 변경은 전체 목록. */
+  const keys = (add ? (EXTRA_CHARS[o.region] || []).concat([CHAR_OF[o.region], FACE_OF[o.region]])
+                    : CHAR_PICK_ALL)
+    .filter((k, i, a) => k && SPRITES[k] && a.indexOf(k) === i);
+  if (!keys.length) return;
+
+  const items = keys.map(k => {
+    const on  = !add && k === o.current;
+    const dim = add && here.indexOf(k) >= 0;
+    return `<button type="button" class="cpick-it${on ? ' on' : ''}${dim ? ' dim' : ''}"
+        data-k="${k}" aria-pressed="${on}">
+        <img src="${charSrc(k)}" alt=""><span>${charName(k)}</span></button>`;
+  }).join('');
+
+  const el = document.createElement('div');
+  el.className = 'char-pick';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', add ? '추가할 캐릭터 선택' : '캐릭터 변경');
+  el.innerHTML =
+    `<div class="cpick-back"></div>
+     <div class="cpick-panel">
+       <div class="cpick-head">
+         <b>${add ? '추가할 캐릭터 선택' : '캐릭터 변경'}</b>
+         <button type="button" class="cpick-close" aria-label="닫기">✕</button>
+       </div>
+       <div class="cpick-grid">${items}</div>
+       <p class="cpick-note">${add
+          ? '이미 서 있는 캐릭터는 흐리게 보여요 — 눌러서 하나 더 세울 수도 있어요'
+          : '고른 컷이 같은 자리에 대신 섭니다'}</p>
+     </div>`;
+  document.body.appendChild(el);
+  charPickNode = el;
+
+  el.addEventListener('click', e => {
+    if (e.target.closest('.cpick-close') || e.target.classList.contains('cpick-back')){
+      closeCharPicker(); return;
+    }
+    const b = e.target.closest('.cpick-it');
+    if (!b) return;
+    const k = b.dataset.k;
+    closeCharPicker();
+    if (add){
+      charPutNear(o.where, o.region, k, o.at);
+    } else {
+      charSwap(o.key, k);
+      charToast(`${charName(k)} 캐릭터로 바꿨어요`);
+      charRedraw();
+    }
+  });
+  el._key = ev => {
+    if (ev.key === 'Escape'){ ev.stopPropagation(); closeCharPicker(); }
+  };
+  document.addEventListener('keydown', el._key, true);   // 시트 닫기보다 먼저 잡는다
+  requestAnimationFrame(() => el.classList.add('on'));
+}
+
+/* 지금 그려져 있는 지도의 장애물 — 꾹 눌러 캐릭터를 더할 때 다시 잰다 */
+function charObsNow(){
+  const R = REGIONS[current];
+  const v = mapover.viewBox.baseVal;
+  const vb = [v.x, v.y, v.width, v.height];
+  return placesOf(current).map(({p}) => { const q = R.px(p.lat, p.lon); return [q[0]-vb[0], q[1]-vb[1]]; })
+    .concat(R.marks.map(m => { const q = R.px(m.lat, m.lon); return [q[0]-vb[0], q[1]-vb[1]]; }))
+    .concat(overlayObs(vb));
+}
+/* 이미 서 있는 캐릭터 자리 — 그려진 것에서 그대로 읽는다 */
+function charTakenNow(){
+  return [...mapillust.querySelectorAll('image.charmove')].map(im => ({
+    x: parseFloat(im.getAttribute('x')), y: parseFloat(im.getAttribute('y')),
+    w: parseFloat(im.dataset.w),         h: parseFloat(im.dataset.h) }));
+}
+
+/** 꾹 누른 자리에서 가장 가까운 빈 자리에 세운다 (빈 자리 고르기는 freeSpots 그대로) */
+function charPutNear(where, region, sprite, at){
+  const s = (typeof SPRITES !== 'undefined') && SPRITES[sprite];
+  if (!s) return;
+  const v = mapillust.viewBox.baseVal;
+  const box = [0, 0, v.width, v.height];
+  const h = v.width * 0.125, w = h * s.w / s.h;   // 소품과 같은 눈높이
+  /* 자리 고르기는 세 걸음이다.
+     ① 꾹 누른 그 자리 — 거기 세우려고 거기를 눌렀다.
+     ② 거기가 이미 찼으면 둘레를 한 바퀴씩 넓혀 가며 바로 옆의 빈 자리.
+     ③ 그래도 없으면 freeSpots() 에게 물어 지도에서 가장 빈 자리를 받되,
+        누른 곳에서 먼 만큼을 점수에 더해 그중 가까운 쪽을 고른다.
+        (상자를 가로지르는 거리가 40점 — 겹침 100점보다는 싸고 이름표 몇 개보다는 비싸다) */
+  const taken = charTakenNow();
+  const fit  = (x, y) => ({ x: Math.max(box[0], Math.min(box[0] + box[2] - w, x)),
+                            y: Math.max(box[1], Math.min(box[1] + box[3] - h, y)) });
+  const clash = c => c && taken.some(u =>
+    Math.abs((c.x + w/2) - (u.x + u.w/2)) < (w + u.w)/2 &&
+    Math.abs((c.y + h/2) - (u.y + u.h/2)) < (h + u.h)/2);
+
+  let best = at ? fit(at[0] - w/2, at[1] - h/2) : null;
+  if (at && clash(best)){
+    best = null;
+    for (const r of [0.75, 1.1, 1.6]){                       // 캐릭터 크기의 몇 배만큼 벌린다
+      for (let i = 0; i < 8 && !best; i++){
+        const th = i * Math.PI / 4;
+        const c = fit(at[0] - w/2 + Math.cos(th)*w*r, at[1] - h/2 + Math.sin(th)*h*r);
+        if (!clash(c)) best = c;
+      }
+      if (best) break;
+    }
+  }
+  if (!best){
+    const cands = freeSpots(box, w, h, charObsNow(), 999, taken);
+    best = cands[0];
+    if (at && cands.length){
+      const diag = Math.hypot(box[2], box[3]) || 1;
+      const cost = c => c.score + 40 * Math.hypot(c.x + w/2 - at[0], c.y + h/2 - at[1]) / diag;
+      cands.forEach(c => { if (cost(c) < cost(best)) best = c; });
+    }
+  }
+  const key = charAdd(where, region, sprite);
+  if (best){
+    const fx = box[2] - w > 0 ? (best.x - box[0]) / (box[2] - w) : 0;
+    const fy = box[3] - h > 0 ? (best.y - box[1]) / (box[3] - h) : 0;
+    saveCharPos(key, Math.max(0, Math.min(1, fx)), Math.max(0, Math.min(1, fy)));
+  }
+  charToast(`${charName(sprite)} 캐릭터를 세웠어요`);
+  charRedraw();
+}
 
 /* ══ 인쇄본 크게 보기 — 확대·이동 ══════════════════════════════
    지도 탭을 끌어오지 않는다. 인쇄 탭에 이미 그려진 패널(대표 사진·연결선까지)을
@@ -783,7 +1037,9 @@ function overlayObs(vb){
   return obs;
 }
 
-/* 지도 탭 캐릭터 — 핀이 비는 두 구석에 소품 커플과 개별 얼굴을 나눠 세운다 */
+/* 지도 탭 캐릭터 — 핀이 비는 구석에 주인공·얼굴·소품 커플을 나눠 세운다.
+   누가 서는지는 charRoster() 가 정한다 (기본 목록 + 손으로 지우거나 바꾸거나 더한 것).
+   소품은 주인공보다 작게 세워 지도를 덮지 않게 한다. */
 function charSpots(R, vs, vb){
   if (typeof SPRITES === 'undefined') return '';
   const W = vb[2], H = vb[3];
@@ -791,24 +1047,8 @@ function charSpots(R, vs, vb){
     .concat(R.marks.map(m => { const q = R.px(m.lat, m.lon); return [q[0]-vb[0], q[1]-vb[1]]; }))
     .concat(overlayObs(vb));
 
-  const a = SPRITES[CHAR_OF[R.key]], b = SPRITES[FACE_OF[R.key]];
-  if (!a) return '';
-  const aw = W*0.225, ah = aw*a.h/a.w;
-  const bw2 = W*0.135, bh2 = b ? bw2*b.h/b.w : 0;
-  const box = [0, 0, W, H];
-  const kA = charKey('map', R.key, 'a'), kB = charKey('map', R.key, 'b');
-
-  const first = savedSpot(kA, box, aw, ah) || freeSpots(box, aw, ah, obs, 1)[0];
-  let out = charDraggable(CHAR_OF[R.key], kA, box, first.x, first.y, aw);
-  const taken = [{ x:first.x, y:first.y, w:aw, h:ah }];
-  if (b){
-    const c = savedSpot(kB, box, bw2, bh2) || freeSpots(box, bw2, bh2, obs, 1, taken)[0];
-    taken.push({ x:c.x, y:c.y, w:bw2, h:bh2 });
-    out += charDraggable(FACE_OF[R.key], kB, box, c.x, c.y, bw2, 0.95);
-  }
-  /* 소품 커플들 — 주인공보다 작게 세워 지도를 덮지 않게 한다 */
-  out += charRow(EXTRA_CHARS[R.key], 'map', R.key, box, W*0.125, obs, taken);
-  return out;
+  return charPlace(charRoster('map', R.key), 'map', R.key, [0, 0, W, H],
+                   { main: W*0.225, face: W*0.135, prop: W*0.125 }, obs);
 }
 
 /* ══ 지도 전체 화면 — 인쇄 탭의 지도 패널을 누르면 열린다 ══
@@ -992,20 +1232,14 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
   const psc = Math.max(0.6, bw/430);
   // 캐릭터는 핀·이름표가 가장 적은 구석에 세운다 (고정하면 니조시장처럼 가린다)
   const chW = bw * 0.245;
-  const chS = (typeof SPRITES !== 'undefined') && SPRITES[CHAR_OF[R.key]];
-  const chH = chS ? chW * chS.h / chS.w : 0;
+  const roster = (typeof SPRITES === 'undefined') ? [] : charRoster('print', R.key);
   let char = '';
-  if (chS){
+  if (roster.length){
     const obs = spots.map(o => [o.x, o.y])
       .concat(R.marks.map(m => R.px(m.lat, m.lon)))
       .concat(carded.map(o => [o.cx + CW/2, o.cy + CW/2]));
-    const box = [bx, by, bw, bh];
-    const key = charKey('print', R.key, 'a');
-    const c = savedSpot(key, box, chW, chH) || freeSpots(box, chW, chH, obs, 1)[0];
-    char = charDraggable(CHAR_OF[R.key], key, box, c.x, c.y, chW);
-    /* 인쇄 패널은 카드·이름표로 이미 빽빽하다 — 소품 커플은 앞의 둘까지만 */
-    char += charRow((EXTRA_CHARS[R.key] || []).slice(0, 2), 'print', R.key,
-                    box, bw*0.12, obs, [{ x:c.x, y:c.y, w:chW, h:chH }]);
+    char = charPlace(roster, 'print', R.key, [bx, by, bw, bh],
+                     { main: chW, face: chW*0.6, prop: bw*0.12 }, obs);
   }
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
