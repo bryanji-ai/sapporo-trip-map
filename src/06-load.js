@@ -34,6 +34,8 @@ async function loadPlaces(){
     // 직접 옮겨 둔 캐릭터 자리 — 브라우저에 남은 값 위에 시트 값을 덮는다.
     // 자리는 두 사람이 같이 보는 값이라 시트가 이긴다. 시트가 모르는 자리(막 더한 캐릭터)는 남는다.
     if (data && data.charPos) Object.assign(CHARPOS, data.charPos);
+    // 구성도 시트가 이긴다 — 두 사람이 같은 배치를 본다
+    if (data && data.charSet) Object.assign(CHARSET, data.charSet);
     return Array.isArray(data) ? data : (data.places || []);
   } catch(e){
     LOAD.error = 'NETWORK';
