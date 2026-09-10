@@ -125,7 +125,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .mapwrap{aspect-ratio:1/1.15;min-height:260px}
 #sharedefs{position:absolute;width:0;height:0;overflow:hidden}
 .scalebar{
-  position:absolute;left:12px;bottom:8px;font-family:"IBM Plex Mono",monospace;
+  position:absolute;left:12px;bottom:8px;z-index:9;font-family:"IBM Plex Mono",monospace;
   font-size:10px;color:var(--map-ink-2);display:flex;align-items:center;gap:6px;
   text-shadow:0 0 3px var(--map-halo),0 0 3px var(--map-halo);
 }
@@ -133,7 +133,9 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 
 /* ── 지역 전환 (지도 좌상단) ── */
 .regionsw{
-  position:absolute;left:10px;top:10px;z-index:5;display:flex;gap:3px;padding:3px;
+  /* z-index 는 .mapstate(8) 보다 위 — 「사진이 아직 없어요」 안내가 떠 있는 동안에도
+     지역 전환은 또렷하게 보이고 눌려야 한다 (2026-09-10) */
+  position:absolute;left:10px;top:10px;z-index:9;display:flex;gap:3px;padding:3px;
   background:rgba(255,252,243,.86);border:1px solid #E0CFAC;border-radius:999px;
   box-shadow:0 2px 8px rgba(38,58,61,.13);backdrop-filter:blur(4px);
 }
@@ -154,10 +156,13 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .regionsw button.bare[aria-pressed="true"]{opacity:1}
 
 /* ── 불러오는 중 · 사진 없음 · 연동 실패 ── */
+/* 🔴 안내는 「읽는 것」이지 「누르는 것」이 아니다 — pointer-events 를 끄지 않으면
+      지도를 통째로 덮은 이 상자가 지역 전환·핀 클릭을 전부 삼킨다.
+      사진 없는 지역으로 한 번 넘어가면 다시는 다른 지역으로 못 가던 원인. (2026-09-10) */
 .mapstate{
   position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:9px;padding:26px 30px;text-align:center;
-  background:rgba(255,252,243,.82);backdrop-filter:blur(3px);
+  background:rgba(255,252,243,.82);backdrop-filter:blur(3px);pointer-events:none;
 }
 .mapstate .st-t{margin:0;font-family:"Jua",sans-serif;font-size:15px;color:var(--map-ink);line-height:1.5}
 .mapstate .st-n{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.65;max-width:30em}
@@ -328,6 +333,13 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   margin-left:auto;flex:0 0 auto;align-self:center;
 }
 .ex-empty{color:var(--ink-3);font-size:13.5px;line-height:1.9;padding:26px 0;text-align:center}
+/* 사진이 오기 전 예시 일정임을 먼저 밝히는 띠 */
+.ex-sample{
+  margin:14px 18px 0;padding:10px 14px;border-radius:10px;
+  background:var(--card);border:1px dashed var(--line);
+  font-size:12.5px;line-height:1.7;color:var(--ink-2);
+}
+.ex-sample b{color:var(--ink)}
 .exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
 .exphotos::-webkit-scrollbar{display:none}
 .exphotos .ph{flex:0 0 34%;min-width:112px}

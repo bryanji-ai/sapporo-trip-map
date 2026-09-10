@@ -1287,17 +1287,16 @@ function stampPosterDays(){
 }
 
 /* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════
-   샘플 데이터(isLive === false)일 때는 아무것도 그리지 않는다 —
-   지도 핀은 위치 참고용으로 남겨두지만, 「펼쳐보기」에 가짜 일정이
-   진짜 여행 기록처럼 쌓여 보이면 안 되기 때문이다. */
+   🔴 예전에는 샘플 데이터(isLive === false)면 통째로 비워 두었다 —
+      가짜 일정이 진짜 기록처럼 보이면 안 된다는 이유였다. 그런데 지도에는
+      삿포로·비에이·오타루 핀이 다 떠 있는데 「펼쳐보기」만 비어 있으니
+      「비에이가 안 나온다」로 보였다. 사진이 오기 전에도 일정은 펼치되,
+      맨 위에 예시라고 먼저 밝혀 오해를 막는다. (2026-09-10) */
 function buildExpand(){
-  if (!isLive){
-    document.getElementById('exbody').innerHTML =
-      `<div class="ex-empty">${charSrc('couple') ? `<img class="empty-couple" src="${charSrc('couple')}" alt="" aria-hidden="true">` : ''}
-         <p>드라이브에 사진을 올리면 여기에 여행 기록이 채워져요</p></div>`;
-    return;
-  }
   let html = '';
+  if (!isLive && PLACES.length)
+    html += `<div class="ex-sample">아직 드라이브 사진이 없어 <b>예시 일정</b>을 보여주고 있어요 —
+               사진을 올리면 이 자리가 우리 기록으로 바뀝니다.</div>`;
   DAYS.forEach((d, di) => {
     const list = PLACES.map((p,i)=>({p,i})).filter(o => o.p.d === d.id)
       .sort((x,y) => x.p.t.localeCompare(y.p.t));
