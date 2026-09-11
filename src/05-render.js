@@ -217,6 +217,13 @@ document.getElementById('printview').addEventListener('click', e => {
          먼저 잡은 쪽(pointer 또는 touch)이 끝까지 끌고, 손가락이 다 떨어지면 반드시 끝난다. */
 (function charDrag(){
   const SLOP    = 4;              // 이만큼 움직여야 「끄는 중」으로 본다 (탭 흔들림 무시)
+  /* 🔴 인쇄본 크게 보기에서만 꾹 누르기가 안 먹던 이유 (2026-09-11)
+        .pv-wrap 은 핀치·팬을 직접 받으려고 touch-action:none 을 쓴다 — 브라우저가 제스처를
+        가져가지 않으니 손끝의 미세한 흔들림까지 pointermove 로 전부 올라온다. 4px 문턱으로는
+        500ms 를 버티지 못해 타이머가 매번 취소됐다 (헤드리스 크롬에서 5px 만 흔들어도
+        팝업이 안 떴다). 확대 보기 안에서는 넉넉히 본다 — 정말 밀 생각이면 500ms 안에
+        이보다 훨씬 크게 움직인다. */
+  const PV_SLOP = 18;
   const HOLD_MS = 500;            // 이만큼 누르고 있으면 「꾹 누르기」
   let cur  = null;                // 지금 끌고 있는 캐릭터 — 한 번에 하나만
   let raf  = 0;
@@ -398,25 +405,33 @@ document.getElementById('printview').addEventListener('click', e => {
     // 캐릭터는 세울 수 있어야 하는데, 그때가 바로 저 안내가 지도를 덮고 있는 때다.
     if (e.target.closest('.pin, .regionsw, .scalebar, button, a')) return;
     const x = e.clientX, y = e.clientY;
-    spot = { x: x, y: y, t: setTimeout(() => {
+    /* lx·ly 는 흔들리다 멈춘 마지막 손가락 자리다. 확대 보기에서는 그 흔들림만큼
+       무대(.pv-stage)도 같이 밀려 있어, 마지막 자리로 재면 어긋남이 상쇄되고
+       처음 누른 그 지점에 캐릭터가 선다. */
+    const sp = { x: x, y: y, lx: x, ly: y,
+                 slop: e.target.closest('.poster-view') ? PV_SLOP : SLOP };
+    sp.t = setTimeout(() => {
       spot = null;
       charEatClick();                              // 손을 떼며 나는 click 이 시트를 닫지 않게
       if (panel){
         // 인쇄본은 패널마다 좌표계가 따로다 — 그 패널 overlay 기준으로 누른 곳을 옮긴다
         const over = panel.querySelector('svg[id^="pover-"]');
-        const q = over && toUser(over, x, y);
+        const q = over && toUser(over, sp.lx, sp.ly);
         openCharPicker({ mode:'add', where:'print', region: panel.dataset.region,
                          at: q ? [q.x, q.y] : null });
       } else {
-        const q = toUser(mapillust, x, y);
+        const q = toUser(mapillust, sp.lx, sp.ly);
         openCharPicker({ mode:'add', where:'map', region: current,
                          at: q ? [q.x, q.y] : null });
       }
-    }, HOLD_MS) };
+    }, HOLD_MS);
+    spot = sp;
   }, true);
 
   document.addEventListener('pointermove', e => {
-    if (spot && Math.hypot(e.clientX - spot.x, e.clientY - spot.y) > SLOP) spotOff();
+    if (!spot) return;
+    if (Math.hypot(e.clientX - spot.x, e.clientY - spot.y) > spot.slop) spotOff();
+    else { spot.lx = e.clientX; spot.ly = e.clientY; }
   }, true);
   ['pointerup','pointercancel'].forEach(t => document.addEventListener(t, spotOff, true));
   addEventListener('scroll', spotOff, true);
@@ -719,7 +734,7 @@ function openPosterView(key){
          <button class="pv-close" aria-label="닫기">✕</button>
        </div>
        <div class="pv-wrap"><div class="pv-stage"></div></div>
-       <p class="pv-hint">두 손가락으로 확대 · 끌어서 이동 · 두 번 누르면 확대/축소</p>`;
+       <p class="pv-hint">두 손가락으로 확대 · 끌어서 이동 · 두 번 누르면 확대/축소 · 꾹 누르면 그림 추가</p>`;
   document.body.appendChild(pv);
 
   pv._at = [src.parentNode, src.nextSibling];
