@@ -2449,8 +2449,34 @@ REGIONS.biei.illust    = illustBiei;
 document.getElementById('sharedefs').innerHTML = defs('bm');
 
 /* ══ 사진 ══
-   드라이브 파일 id 가 있으면 실제 썸네일, 없으면 색 타일로 자리만 잡는다. */
-const photoUrl = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
+   드라이브 파일 id 가 있으면 실제 썸네일, 없으면 색 타일로 자리만 잡는다.
+
+   🔴 사진이 보이려면 드라이브 파일이 「링크가 있는 사람」에게 열려 있어야 한다.
+      닫혀 있으면 어떤 주소를 써도 구글 로그인 화면으로 넘어가 전부 깨진다
+      (폰 카카오 브라우저처럼 구글에 로그인 안 된 곳에서 특히).
+      여는 일은 Apps Script 가 한다 — sapporo-trip-settlement/apps-script/Share.js,
+      새 사진은 갱신할 때 자동, 이미 쌓인 사진은 ?action=sharePhotos.
+
+   주소는 lh3(구글 사진 CDN) 를 먼저 쓴다. drive.google.com/thumbnail 은 한 장마다
+   다른 주소로 한 번 더 튕기고 여러 장을 한꺼번에 부르면 막히는 일이 있다 —
+   펼쳐보기처럼 수십 장을 한 화면에 까는 곳에서 불리하다.
+   그래도 못 받아 오면 바로 아래 error 처리기가 옛 주소로 한 번 더 시도한다. */
+const photoUrl = (id, w) => `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w${w}`;
+const photoUrlAlt = (id, w) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w}`;
+
+/* lh3 가 실패한 사진만 옛 주소로 한 번 더 — 사진마다 손댈 필요 없이 여기서 받는다.
+   error 는 위로 올라오지 않으므로(버블링이 없다) 캡처 단계에서 잡는다. */
+addEventListener('error', e => {
+  const n = e.target;
+  if (!n || n.dataset == null || n.dataset.fb) return;
+  const cur = n.tagName === 'IMG' ? n.src
+            : (n.tagName === 'image' ? n.getAttribute('href') : '');
+  const m = /lh3\.googleusercontent\.com\/d\/([^=?]+)=w(\d+)/.exec(cur || '');
+  if (!m) return;
+  n.dataset.fb = '1';
+  const u = photoUrlAlt(decodeURIComponent(m[1]), m[2]);
+  if (n.tagName === 'IMG') n.src = u; else n.setAttribute('href', u);
+}, true);
 
 /* 사진 한 장의 주소 — 드라이브 파일 id 가 원칙이고,
    샘플 사진(01-data.js sampleShots)은 src 를 직접 들고 온다.
@@ -3344,10 +3370,13 @@ function setSvg(el, html){
 }
 
 /* 핀 하나 그리기 — 크기는 고정(사진 수와 무관) */
-function pinSvg(x, y, ph, color, i, on){
-  const r = 8.0;
+function pinSvg(x, y, color, i, on){
+  const r = 8.0;                        // 사진 장수와 무관하게 늘 같은 크기
   return `<g class="pin${on?' on':''}" data-i="${i}" tabindex="0" role="button">`
-    + `<circle class="halo" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*2.4).toFixed(1)}" fill="${color}"/>`
+    // 손가락이 닿을 자리만 넓게 잡는다 — 칠하지 않으므로 눈에는 보이지 않는다.
+    // 🔴 예전에는 이 원을 핀 색으로 꽉 채워서(r*2.4) 핀이 물방울이 아니라
+    //    커다란 동그라미로 보였다. 폰에서 특히 심했다. (2026-09-11)
+    + `<circle class="hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*2.4).toFixed(1)}" fill="transparent" pointer-events="all"/>`
     + `<path class="core" d="M${x.toFixed(1)},${(y+r*0.5).toFixed(1)} c${(-r*1.15).toFixed(1)},${(-r*0.9).toFixed(1)} ${(-r*1.5).toFixed(1)},${(-r*1.5).toFixed(1)} ${(-r*1.5).toFixed(1)},${(-r*2.1).toFixed(1)} a${r.toFixed(1)},${r.toFixed(1)} 0 1 1 ${(r*3).toFixed(1)},0 c0,${(r*0.6).toFixed(1)} ${(-r*0.35).toFixed(1)},${(r*1.2).toFixed(1)} ${(-r*1.5).toFixed(1)},${(r*2.1).toFixed(1)} Z" fill="${color}"/>`
     + `<circle cx="${x.toFixed(1)}" cy="${(y-r*1.6).toFixed(1)}" r="${(r*0.42).toFixed(1)}" fill="#FFFFFF"/></g>`;
 }
@@ -3383,7 +3412,7 @@ function drawScreen(){
   let pins = '';
   vs.forEach(({p,i}) => {
     const [x,y] = R.px(p.lat,p.lon);
-    pins += pinSvg(x, y, p.ph, `var(${CAT[p.k].c})`, i, i===openIdx);
+    pins += pinSvg(x, y, `var(${CAT[p.k].c})`, i, i===openIdx);
   });
   // 🔴 innerHTML 은 같은 그림이어도 SVG 를 다시 파싱한다 — 손끝이 걸리는 주범이었다.
   //    그려 넣을 문자열이 지난번과 같으면 건드리지 않는다. (2026-09-09)
