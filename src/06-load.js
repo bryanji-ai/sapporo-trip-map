@@ -185,23 +185,12 @@ function sortPlaces(list){
   return list.sort((a,b) => dayCmp(a.d, b.d) || a.t.localeCompare(b.t) || a.n.localeCompare(b.n));
 }
 
-/* ── 실데이터가 한 곳도 없는 지역만 샘플 일정으로 채운다 ──
-   🔴 예전에는 드라이브에서 한 곳이라도 건지면(stat.kept) 샘플 일정 30곳을 통째로 버렸다.
-      그런데 실제로 들어온 건 비에이 한 곳뿐이라, 삿포로·오타루는 장소가 0개가 되고
-      인쇄 포스터의 두 패널이 「사진이 아직 없어요」만 남았다 — 사진 카드가 통째로 사라진 것.
-      실데이터가 있는 지역은 그대로 두고, 빈 지역만 그 지역 샘플로 채운다.
-      live=true 로 얹으므로 샘플 사진(picsum)은 버려지고 색 타일이 선다 —
-      남의 사진이 우리 기록인 척 섞이는 일은 없다. (2026-09-11) */
-function fillEmptyRegions(){
-  const have = new Set(PLACES.map(p => p.g));
-  const rest = SAMPLE_PLACES.filter(p => !have.has(p.g));
-  if (!rest.length) return [];
-  const live = PLACES, stat = LOAD.stat;
-  adoptPlaces(rest, true);                 // 샘플 사진은 여기서 떨어져 나간다
-  PLACES = sortPlaces(live.concat(PLACES));
-  LOAD.stat = stat;                        // 진단 수치는 실데이터 기준을 지킨다
-  return [...new Set(rest.map(p => p.g))];
-}
+/* ── 빈 지역을 샘플로 채우던 fillEmptyRegions() 는 걷어냈다 ──
+   🔴 2026-09-11 오전에는 실데이터가 비에이 한 곳뿐이라 삿포로·오타루 패널이 비는 걸 막으려
+      빈 지역을 샘플 일정으로 덧댔다. 그런데 드라이브에 진짜 사진이 올라온 뒤로는
+      가 본 적 없는 곳(샘플 장소)의 핀이 진짜 기록에 섞여 보이는 게 더 큰 문제가 됐다.
+      실데이터가 한 곳이라도 있으면(isLive) 샘플은 한 건도 얹지 않는다 —
+      간 곳에만 핀이 선다. 빈 지역 패널은 「사진이 아직 없어요」로 둔다. (2026-09-11) */
 
 /* ── 대표 사진 선택을 웹앱에도 알린다 (되면 좋고, 안 되면 이번 세션만 유지) ── */
 function saveHero(p){
@@ -224,7 +213,6 @@ async function syncFromDrive(){
   const stat = adoptPlaces(rows, true);
   isLive = !!stat.kept;
   if (!stat.kept){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
-  else fillEmptyRegions();
   refreshAll();
   return stat;
 }
@@ -276,7 +264,6 @@ async function boot(){
   const sample = !stat.kept;
   isLive = !sample;                    // 펼쳐보기는 실데이터일 때만 채운다
   if (sample){ LOAD.payload = null; adoptPlaces(SAMPLE_PLACES, false); }
-  else fillEmptyRegions();
   refreshAll();
 
   // 지도 위에는 안내를 띄우지 않는다 — 상태 표시는 drawScreen() 이 지역별로만 처리하고,

@@ -8,8 +8,8 @@
          다시는 다른 지역으로 못 가던 것
       ② 드라이브 사진이 오기 전(샘플)에는 「펼쳐보기」가 통째로 비어
          비에이를 비롯한 어떤 일정도 보이지 않던 것
-   🔴 2026-09-11 ③ 실데이터가 비에이 한 곳만 왔더니 샘플 일정이 통째로 밀려
-         인쇄 포스터의 삿포로·오타루 패널이 「사진이 아직 없어요」만 남던 것
+   🔴 2026-09-11 ④ 실데이터가 들어온 뒤에도 빈 지역을 샘플로 채우는 바람에
+         가 본 적 없는 곳의 핀·예시 배지가 진짜 기록에 섞여 보이던 것
 """
 import json, pathlib, re, subprocess, sys, tempfile
 
@@ -32,7 +32,7 @@ ALL_THREE = ONLY_SAPPORO + [
 ]
 
 # 실제 웹앱이 돌려주던 응답 — 비에이 한 곳뿐이고 그마저 사진이 0장이다.
-# 이것 하나 때문에 샘플 일정 30곳이 통째로 밀려 삿포로·오타루 패널이 비었다.
+# 실데이터가 한 곳이라도 있으면 샘플은 단 한 건도 섞이면 안 된다.
 ONLY_BIEI = [
     {"id": "P001", "name": "비에이 버스 투어", "days": "2026-09-12", "first": "",
      "photos": 0, "pays": 1, "lat": 43.591112, "lon": 142.461705, "k": "move"},
@@ -115,6 +115,8 @@ setTimeout(async () => {
   const ex = document.getElementById('exbody');
   out.exSampleBadges = ex.querySelectorAll('.spot .ex-eg').length;
   out.exBanner = !!ex.querySelector('.ex-sample');
+  out.samplePlaces = PLACES.filter(p => p._sample).length;
+  out.exSpots = ex.querySelectorAll('.spot').length;
   out.errors = window.__err;
   const d = document.createElement('pre');
   d.id = 'PROBE'; d.textContent = JSON.stringify(out);
@@ -180,21 +182,22 @@ ck("실데이터 모드다", r["isLive"], True)
 ck("펼쳐보기에 세 지역이 다 있다", sorted(r["exRegions"]), sorted(["삿포로", "비에이", "오타루"]))
 ck("장소 4곳", r["exSpots"], 4)
 
-print("④ 실데이터가 비에이 한 곳뿐일 때 — 삿포로·오타루 포스터 패널이 비지 않는가")
+print("④ 실데이터가 비에이 한 곳뿐일 때 — 샘플 장소가 단 하나도 섞이지 않는가")
 r = run(ONLY_BIEI, POSTER_PROBE)
 ck("자바스크립트 오류 없음", r["errors"], [])
 ck("실데이터 모드다", r["isLive"], True)
-ck("삿포로 패널에 「사진 없음」이 뜨지 않는다", r["poster"]["sapporo"]["nospot"], False)
-ck("오타루 패널에 「사진 없음」이 뜨지 않는다", r["poster"]["otaru"]["nospot"], False)
-ck("삿포로에 사진 카드가 정원껏 선다", r["poster"]["sapporo"]["cards"], 7)
-ck("오타루에 사진 카드가 정원껏 선다", r["poster"]["otaru"]["cards"], 3)
+ck("샘플 장소가 하나도 없다", r["samplePlaces"], 0)
+ck("장소는 실데이터 한 곳뿐", r["places"], 1)
+ck("비에이만 핀이 선다", r["byG"], {"biei": 1})
 ck("비에이는 실데이터 한 곳", r["poster"]["biei"]["cards"], 1)
-ck("실사진이 없으니 전부 색 타일", r["poster"]["sapporo"]["shots"], 0)
-ck("크게 보기로 옮겨도 카드가 따라온다", r["enlargedSapporo"]["cards"], 7)
-ck("예시로 채운 패널은 예시라고 밝힌다", r["poster"]["sapporo"]["sample"], True)
-ck("실데이터 패널에는 예시 표시가 없다", r["poster"]["biei"]["sample"], False)
-ck("펼쳐보기에도 예시 안내가 뜬다", r["exBanner"], True)
-ck("펼쳐보기 예시 일정에 배지가 붙는다", r["exSampleBadges"] > 0, True)
+ck("삿포로 패널은 카드가 없다", r["poster"]["sapporo"]["cards"], 0)
+ck("오타루 패널은 카드가 없다", r["poster"]["otaru"]["cards"], 0)
+ck("삿포로 패널은 「사진 없음」으로 둔다", r["poster"]["sapporo"]["nospot"], True)
+ck("오타루 패널은 「사진 없음」으로 둔다", r["poster"]["otaru"]["nospot"], True)
+ck("패널 머리글에 예시 표시가 없다", any(v["sample"] for v in r["poster"].values()), False)
+ck("펼쳐보기에 예시 안내가 없다", r["exBanner"], False)
+ck("펼쳐보기에 예시 배지가 없다", r["exSampleBadges"], 0)
+ck("펼쳐보기도 실데이터 한 곳", r["exSpots"], 1)
 
 print()
 if fails:
