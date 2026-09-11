@@ -276,6 +276,8 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-family:"Jua",sans-serif;font-size:1.5cqw;color:var(--ink-2);
   display:flex;align-items:baseline;gap:.7cqw;padding-bottom:.5cqw;
 }
+/* 드라이브 사진이 아직 없어 예시 일정으로 채운 패널 — 머리글에 그렇다고 적는다 */
+.p-panel.sample .cap em::after{content:" · 예시";color:var(--ink-3)}
 .p-panel .cap em{font-style:normal;font-family:"Noto Sans JP",sans-serif;font-size:1.02cqw;color:var(--ink-3)}
 .p-panel .cap span{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:.95cqw;color:var(--ink-3);letter-spacing:.06em}
 .p-map{position:relative;flex:1 1 auto;min-height:0}
@@ -340,6 +342,12 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-size:12.5px;line-height:1.7;color:var(--ink-2);
 }
 .ex-sample b{color:var(--ink)}
+/* 예시로 채운 일정 한 건 — 진짜 기록과 눈으로 구분되게 */
+.ex-eg{
+  margin-left:6px;flex:0 0 auto;align-self:center;
+  font-size:10.5px;line-height:1;padding:3px 6px;border-radius:999px;
+  color:var(--ink-3);background:var(--card);border:1px dashed var(--line);
+}
 .exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
 .exphotos::-webkit-scrollbar{display:none}
 .exphotos .ph{flex:0 0 34%;min-width:112px}

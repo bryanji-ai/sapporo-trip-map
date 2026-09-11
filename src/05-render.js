@@ -1311,7 +1311,11 @@ function drawPanel(R, side, baseEl, overEl, maxCard){
   overEl.innerHTML = `<defs>${grads}${clips}</defs>${landmarkArt(R,psc)}${g}${landmarkLabels(R,psc)}${char}`;
   overEl.parentElement.classList.toggle('nospot', !spots.length);
   const panelEl = overEl.closest('.p-panel');
-  if (panelEl) panelEl.dataset.cards = side;      // 힌트를 카드 반대편에 둔다
+  if (panelEl){
+    panelEl.dataset.cards = side;                 // 힌트를 카드 반대편에 둔다
+    // 드라이브 사진이 아직 없어 예시 일정으로 채운 지역 — 머리글에 그렇다고 적는다
+    panelEl.classList.toggle('sample', !!spots.length && spots.every(s => s._sample));
+  }
   return spots;
 }
 
@@ -1361,8 +1365,12 @@ function stampPosterDays(){
       맨 위에 예시라고 먼저 밝혀 오해를 막는다. (2026-09-10) */
 function buildExpand(){
   let html = '';
-  if (!isLive && PLACES.length)
-    html += `<div class="ex-sample">아직 드라이브 사진이 없어 <b>예시 일정</b>을 보여주고 있어요 —
+  // 예시가 하나라도 섞여 있으면 먼저 밝힌다 — 전부 예시일 때든, 사진 없는 지역만 예시일 때든
+  const egs = PLACES.filter(p => p._sample).length;
+  if (egs)
+    html += `<div class="ex-sample">${egs === PLACES.length
+        ? `아직 드라이브 사진이 없어 <b>예시 일정</b>을 보여주고 있어요 —`
+        : `사진이 아직 없는 지역은 <b>예시 일정</b>으로 채워 두었어요 (${egs}곳) —`}
                사진을 올리면 이 자리가 우리 기록으로 바뀝니다.</div>`;
   DAYS.forEach((d, di) => {
     const list = PLACES.map((p,i)=>({p,i})).filter(o => o.p.d === d.id)
@@ -1385,7 +1393,8 @@ function buildExpand(){
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
             <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${p.j}</div>` : ''}</div>
-            <span class="rg">${REGIONS[p.g].name}</span></div>
+            <span class="rg">${REGIONS[p.g].name}</span>
+            ${p._sample ? `<span class="ex-eg">예시</span>` : ''}</div>
           ${p.ph ? `<div class="exphotos">${ph}</div>` : ''}
         </article>`;
     });
