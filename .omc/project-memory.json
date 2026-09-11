@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1788993696705,
+  "lastScanned": 1789107931900,
   "projectRoot": "/Users/seunghunji/sapporo-trip-map",
   "techStack": {
     "languages": [],
@@ -36,14 +36,14 @@
       "path": "assets",
       "purpose": "Static assets",
       "fileCount": 0,
-      "lastAccessed": 1788993696689,
+      "lastAccessed": 1789107931889,
       "keyFiles": []
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 9,
-      "lastAccessed": 1788993696690,
+      "lastAccessed": 1789107931890,
       "keyFiles": [
         "00-chars.js",
         "01-data.js",
@@ -55,8 +55,8 @@
     "tools": {
       "path": "tools",
       "purpose": null,
-      "fileCount": 10,
-      "lastAccessed": 1788993696690,
+      "fileCount": 16,
+      "lastAccessed": 1789107931890,
       "keyFiles": [
         "biei.json",
         "biei_dem.json",
@@ -66,31 +66,6 @@
       ]
     }
   },
-  "hotPaths": [
-    {
-      "path": "src/00-chars.js",
-      "accessCount": 2,
-      "lastAccessed": 1788993976296,
-      "type": "file"
-    },
-    {
-      "path": "tools/normalize_chars.py",
-      "accessCount": 1,
-      "lastAccessed": 1788994204505,
-      "type": "file"
-    },
-    {
-      "path": "assets/chars/char_tower-b.png",
-      "accessCount": 1,
-      "lastAccessed": 1789001275235,
-      "type": "file"
-    },
-    {
-      "path": "assets/chars/char_snowman-b.png",
-      "accessCount": 1,
-      "lastAccessed": 1789001275485,
-      "type": "file"
-    }
-  ],
+  "hotPaths": [],
   "userDirectives": []
 }
