@@ -3382,6 +3382,31 @@ function pinSvg(x, y, color, i, on){
     + `<circle cx="${x.toFixed(1)}" cy="${(y-r*1.6).toFixed(1)}" r="${(r*0.42).toFixed(1)}" fill="#FFFFFF"/></g>`;
 }
 
+/* 핀이 너무 가까우면 퍼뜨린다 — 손가락 터치 반경(r*2.4≈19px) 안에 다른 핀이 있으면 밀어낸다.
+   SVG 좌표계 기준이라 실제 화면 px 와는 vb 배율만큼 다를 수 있지만, 같은 공간에서 반복하므로 일관성 있다.
+   최대 3회 반복으로 자연스럽게 수렴한다. */
+function spreadPins(coords, minDist){
+  const pts = coords.map(([x,y]) => ({x,y}));
+  for (let iter = 0; iter < 4; iter++){
+    let moved = false;
+    for (let a = 0; a < pts.length; a++){
+      for (let b = a+1; b < pts.length; b++){
+        const dx = pts[b].x - pts[a].x;
+        const dy = pts[b].y - pts[a].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d >= minDist || d < 0.001) continue;
+        const push = (minDist - d) / 2;
+        const nx = dx / d, ny = dy / d;
+        pts[a].x -= nx * push; pts[a].y -= ny * push;
+        pts[b].x += nx * push; pts[b].y += ny * push;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return pts.map(p => [p.x, p.y]);
+}
+
 /* 지도는 남은 화면을 채운다 — 안내를 접으면 그만큼 세로로 커진다.
    문서 기준 top 을 쓰므로 스크롤 위치와 무관하게 같은 값이 나온다. */
 function mapRatio(){
@@ -3411,8 +3436,12 @@ function drawScreen(){
 
   const sc = Math.max(0.55, Math.min(1.5, vb[2]/560));
   let pins = '';
-  vs.forEach(({p,i}) => {
-    const [x,y] = R.px(p.lat,p.lon);
+  // 핀 좌표 수집
+  const rawCoords = vs.map(({p}) => R.px(p.lat, p.lon));
+  // 겹치는 핀 퍼뜨리기 — 터치 반경(r*2.4=19.2) 기준으로 밀어낸다
+  const spreadCoords = spreadPins(rawCoords, 20);
+  vs.forEach(({p,i}, idx) => {
+    const [x,y] = spreadCoords[idx];
     pins += pinSvg(x, y, `var(${CAT[p.k].c})`, i, i===openIdx);
   });
   // 🔴 innerHTML 은 같은 그림이어도 SVG 를 다시 파싱한다 — 손끝이 걸리는 주범이었다.
@@ -3877,7 +3906,7 @@ function buildExpand(){
     list.forEach(({p,i}) => {
       let ph = '';
       for (let k=0;k<p.ph;k++)
-        ph += `<div class="ph${k===p.hero?' hero':''}">${shotImg(p,k,i*7+k,320)}</div>`;
+        ph += `<div class="ph${k===p.hero?' hero':''}" data-pi="${i}" data-k="${k}" style="cursor:zoom-in">${shotImg(p,k,i*7+k,320)}</div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
             <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${cleanMemo(p.j)}</div>` : ''}</div>
@@ -3890,6 +3919,18 @@ function buildExpand(){
   document.getElementById('exbody').innerHTML =
     html || `<div class="ex-empty">${charSrc('couple') ? `<img class="empty-couple" src="${charSrc('couple')}" alt="" aria-hidden="true">` : ''}
        <p>아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p></div>`;
+
+  // 펼쳐보기 사진 클릭 → 라이트박스 (한 번만 등록)
+  const exbody = document.getElementById('exbody');
+  if (!exbody._lbBound) {
+    exbody._lbBound = true;
+    exbody.addEventListener('click', function(e){
+      const ph = e.target.closest('[data-pi]');
+      if (!ph) return;
+      const pi = +ph.dataset.pi, k = +ph.dataset.k;
+      openPlacePhotos(pi, k);
+    });
+  }
 }
 
 /* ══════════ 탭 ══════════ */
