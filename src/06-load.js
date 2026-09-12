@@ -82,6 +82,52 @@ function timeOf(raw){
   return m ? `${m[1].padStart(2,'0')}:${m[2]}` : '--:--';
 }
 
+/* GPS 좌표로 가장 가까운 알려진 장소명을 반환 (반경 600m 이내) */
+const GPS_SPOTS = [
+  // 삿포로
+  {lat:43.0595, lon:141.3510, n:'오도리공원'},
+  {lat:43.0627, lon:141.3518, n:'시계탑'},
+  {lat:43.0609, lon:141.3565, n:'TV타워'},
+  {lat:43.0686, lon:141.3508, n:'삿포로역'},
+  {lat:43.0637, lon:141.3900, n:'삿포로역'},
+  {lat:43.0553, lon:141.3536, n:'라멘 요코초'},
+  {lat:43.0551, lon:141.3525, n:'스스키노'},
+  {lat:43.0708, lon:141.3690, n:'맥주박물관'},
+  {lat:43.0748, lon:141.3420, n:'홋카이도대'},
+  // 오타루
+  {lat:43.1985, lon:140.9944, n:'오타루역'},
+  {lat:43.1975, lon:140.9995, n:'오타루 운하'},
+  {lat:43.1925, lon:140.9958, n:'사카이마치'},
+  // 후라노
+  {lat:43.1697, lon:141.7576, n:'후라노'},
+  {lat:43.1940, lon:141.8040, n:'후라노 근방'},
+  // 비에이
+  {lat:43.5883, lon:142.4675, n:'비에이역'},
+  {lat:43.5920, lon:142.4650, n:'비에이 시내'},
+  {lat:43.5272, lon:142.4652, n:'패치워크 로드'},
+  {lat:43.5546, lon:142.4638, n:'사계채의 언덕'},
+  {lat:43.5766, lon:142.4929, n:'크리스마스 트리 나무'},
+  {lat:43.4901, lon:142.4965, n:'사이로 전망대'},
+  {lat:43.4923, lon:142.6140, n:'시로가네 온천'},
+  {lat:43.4731, lon:142.6390, n:'청의 호수'},
+  {lat:43.5169, lon:142.6236, n:'청의 호수'},
+  {lat:43.4185, lon:142.4744, n:'팜 도미타'},
+  {lat:43.6197, lon:142.4463, n:'켄과 메리의 나무'},
+];
+function nameByGps(lat, lon){
+  if (lat == null || lon == null) return '';
+  const R = 600; // 600m 이내
+  let best = '', bestD = R;
+  for (const s of GPS_SPOTS){
+    const kx = Math.cos((lat + s.lat) / 2 * Math.PI / 180);
+    const dy = (lat - s.lat) * 111320;
+    const dx = (lon - s.lon) * 111320 * kx;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d < bestD){ bestD = d; best = s.n; }
+  }
+  return best;
+}
+
 /* 사진 목록 — 장소 안에 들어 있거나, 별도 photos 맵에 들어 있다 */
 function shotsOf(rec, photoMap){
   let raw = rec.shots || rec.photoList || rec.files;
@@ -148,7 +194,7 @@ function adoptPlaces(rows, live){
     if (lat == null || lon == null){ stat.noGeo++; return; }
 
     const g = regionOf(lat, lon);
-    const name = str(rec, ['n','name','title','place']) || '이름 없는 장소';
+    const name = str(rec, ['n','name','title','place']) || nameByGps(lat, lon) || '이름 없는 장소';
     // 세 지역 상자 밖이거나, 상자 안이어도 지형 데이터 밖이면 지도에 찍을 수 없다
     if (!g || !inMap(g, lat, lon)){
       stat.offMap++;
