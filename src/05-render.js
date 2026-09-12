@@ -131,9 +131,9 @@ function openPlacePhotos(i, k){
 /* ══ 전체 사진 갤러리 — 인쇄 탭 포스터를 누르면 열린다 ══
    포스터에는 장소마다 대표 사진 한 장만 올라간다. 나머지 사진을
    지역 · 날짜 순으로 한 번에 훑어보게 하는 층이다.
-   한 장소에 6장까지 늘어놓고, 넘치는 만큼은 「+N」 타일이 라이트박스로 잇는다. */
+   한 장소의 사진을 모두 늘어놓는다. (정원은 사실상 제한 없음) */
 let galNode = null;                   // 열려 있는 갤러리
-const GAL_MAX = 6;                    // 한 장소에 늘어놓는 썸네일 정원
+const GAL_MAX = 60;                   // 한 장소에 늘어놓는 썸네일 정원
 
 /* 갤러리 본문 — 포스터와 같은 지역 순서(삿포로 → 오타루 → 비에이)로 */
 function galleryBody(){
@@ -1029,7 +1029,7 @@ function openPin(i){
   openIdx = i;
   const day = dayOf(p.d);
   const c = `var(${day.c})`;
-  const shown = allPhotos ? p.ph : Math.min(p.ph, 8);
+  const shown = p.ph;                 // 언제나 전부 — 가로 스트립/격자 배치만 토글한다
   let ph = '';
   for (let k=0;k<shown;k++)
     ph += `<div class="ph">${shotImg(p,k,i*7+k,400)}<button class="star" aria-pressed="${k===p.hero}" aria-label="대표 사진">★</button></div>`;
@@ -1039,7 +1039,7 @@ function openPin(i){
        <h2>${p.n}</h2>${p.j ? `<div class="jp">${p.j}</div>` : ''}
      </div>
      <div class="photos${allPhotos?' all':''}">${ph}</div>
-     ${p.ph > 8 ? `<button class="more" id="more">${allPhotos ? '접기' : `사진 ${p.ph}장 모두 보기`}</button>` : ''}
+     ${p.ph > 3 ? `<button class="more" id="more">${allPhotos ? '접기' : `사진 ${p.ph}장 격자로 보기`}</button>` : ''}
      ${p.pay.length ? `<div class="paid">${p.pay.map(r=>
         `<div class="row"><b>${r[0]}</b><span class="amt">${r[1]}</span></div>`).join('')}</div>` : ''}`;
   sheet.classList.add('open');
@@ -1408,11 +1408,9 @@ function buildExpand(){
         <em>${list.length}곳 · 사진 ${list.reduce((a,o)=>a+o.p.ph,0)}</em>
         ${faceSrc ? `<img class="dayface" src="${faceSrc}" alt="" aria-hidden="true">` : ''}</div>`;
     list.forEach(({p,i}) => {
-      const shown = Math.min(p.ph, 6);
       let ph = '';
-      for (let k=0;k<shown;k++)
+      for (let k=0;k<p.ph;k++)
         ph += `<div class="ph${k===p.hero?' hero':''}">${shotImg(p,k,i*7+k,320)}</div>`;
-      if (p.ph > shown) ph += `<div class="count">+${p.ph-shown}</div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
             <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${p.j}</div>` : ''}</div>
