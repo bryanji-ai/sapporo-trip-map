@@ -311,7 +311,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .ex-head{padding:20px 18px 6px}
 .ex-head h1{font-size:25px;letter-spacing:-.015em}
 .ex-head p{margin:7px 0 0;font-size:13px;color:var(--ink-3);line-height:1.6}
-.daysec{margin-top:26px}
+.daysec{margin-top:16px}  /* 섹션 간 빈 공간 축소 */
 .daybar{
   position:sticky;top:49px;z-index:10;background:var(--paper);
   padding:9px 18px 8px;border-bottom:1px solid var(--line);
@@ -340,9 +340,10 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-size:12.5px;line-height:1.7;color:var(--ink-2);
 }
 .ex-sample b{color:var(--ink)}
-.exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
+.exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;
+  align-items:flex-start} /* aspect-ratio:1 이 flex stretch 와 충돌하지 않도록 */
 .exphotos::-webkit-scrollbar{display:none}
-.exphotos .ph{flex:0 0 34%;min-width:112px}
+.exphotos .ph{flex:0 0 34%;min-width:112px;height:auto} /* height:auto — aspect-ratio:1 이 결정하게 */
 .exphotos .ph.hero{outline:2px solid var(--d14);outline-offset:-2px}
 
 @media (min-width:760px){

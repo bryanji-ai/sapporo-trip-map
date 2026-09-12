@@ -58,12 +58,16 @@ function str(o, keys){
     const v = o[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
     if (typeof v === 'number') return String(v);
+    // 배열이면 첫 번째 비어있지 않은 문자열을 돌려준다 (days:["9/12","9/13"] 형태)
+    if (Array.isArray(v) && v.length) return String(v[0]);
   }
   return '';
 }
 
 /* "2026-09-11T16:40" · "9/11 · 9/12" · "9/11" → "9/11" */
 function dayId(raw){
+  // 배열로 오면 첫 번째 요소를 쓴다 (days:["9/11","9/12"] 형태 대응)
+  if (Array.isArray(raw)) raw = raw[0];
   const s = String(raw || '');
   let m = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
   if (m) return `${+m[2]}/${+m[3]}`;

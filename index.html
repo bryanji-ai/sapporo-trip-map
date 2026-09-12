@@ -328,7 +328,7 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
 .ex-head{padding:20px 18px 6px}
 .ex-head h1{font-size:25px;letter-spacing:-.015em}
 .ex-head p{margin:7px 0 0;font-size:13px;color:var(--ink-3);line-height:1.6}
-.daysec{margin-top:26px}
+.daysec{margin-top:16px}  /* 섹션 간 빈 공간 축소 */
 .daybar{
   position:sticky;top:49px;z-index:10;background:var(--paper);
   padding:9px 18px 8px;border-bottom:1px solid var(--line);
@@ -357,9 +357,10 @@ h1,h2,h3{font-family:"Jua","Gowun Batang",sans-serif;font-weight:400;margin:0;te
   font-size:12.5px;line-height:1.7;color:var(--ink-2);
 }
 .ex-sample b{color:var(--ink)}
-.exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
+.exphotos{display:flex;gap:6px;margin:11px -18px 0;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;
+  align-items:flex-start} /* aspect-ratio:1 이 flex stretch 와 충돌하지 않도록 */
 .exphotos::-webkit-scrollbar{display:none}
-.exphotos .ph{flex:0 0 34%;min-width:112px}
+.exphotos .ph{flex:0 0 34%;min-width:112px;height:auto} /* height:auto — aspect-ratio:1 이 결정하게 */
 .exphotos .ph.hero{outline:2px solid var(--d14);outline-offset:-2px}
 
 @media (min-width:760px){
@@ -3829,6 +3830,25 @@ function stampPosterDays(){
   });
 }
 
+/* ── 내부 메모 텍스트 필터링 ──
+   장소 j(일본어명) 필드에 「사진 잘영 포함」, 「2인」, 「카 사진」처럼
+   입력 시 혼입된 내부 메모성 텍스트를 걸러낸다.
+   ① 괄호 안 메모: (사진 잘영 포함 2인) 등
+   ② 숫자+인 단독: 「2인」 등
+   ③ 사진 관련 메모: 「사진 잘영 포함」 등 */
+function cleanMemo(s){
+  if (!s) return s;
+  return s
+    // 괄호( ) 안 내용이 메모성(한글·숫자·공백만)이면 제거
+    .replace(/[（(][^）)]*(?:사진|잘영|포함|인|명)[^）)]*[）)]/g, '')
+    // 「숫자+인」이 앞뒤 공백 또는 문장 경계에 있을 때
+    .replace(/\s*\d+인\s*/g, ' ')
+    // 사진 관련 메모 구문
+    .replace(/\s*사진\s*잘영\s*포함\s*/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 /* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════
    🔴 예전에는 샘플 데이터(isLive === false)면 통째로 비워 두었다 —
       가짜 일정이 진짜 기록처럼 보이면 안 된다는 이유였다. 그런데 지도에는
@@ -3860,7 +3880,7 @@ function buildExpand(){
         ph += `<div class="ph${k===p.hero?' hero':''}">${shotImg(p,k,i*7+k,320)}</div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
-            <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${p.j}</div>` : ''}</div>
+            <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${cleanMemo(p.j)}</div>` : ''}</div>
             <span class="rg">${REGIONS[p.g].name}</span></div>
           ${p.ph ? `<div class="exphotos">${ph}</div>` : ''}
         </article>`;
@@ -4006,12 +4026,16 @@ function str(o, keys){
     const v = o[k];
     if (typeof v === 'string' && v.trim()) return v.trim();
     if (typeof v === 'number') return String(v);
+    // 배열이면 첫 번째 비어있지 않은 문자열을 돌려준다 (days:["9/12","9/13"] 형태)
+    if (Array.isArray(v) && v.length) return String(v[0]);
   }
   return '';
 }
 
 /* "2026-09-11T16:40" · "9/11 · 9/12" · "9/11" → "9/11" */
 function dayId(raw){
+  // 배열로 오면 첫 번째 요소를 쓴다 (days:["9/11","9/12"] 형태 대응)
+  if (Array.isArray(raw)) raw = raw[0];
   const s = String(raw || '');
   let m = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
   if (m) return `${+m[2]}/${+m[3]}`;

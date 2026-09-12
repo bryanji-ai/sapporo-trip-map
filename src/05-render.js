@@ -1382,6 +1382,25 @@ function stampPosterDays(){
   });
 }
 
+/* ── 내부 메모 텍스트 필터링 ──
+   장소 j(일본어명) 필드에 「사진 잘영 포함」, 「2인」, 「카 사진」처럼
+   입력 시 혼입된 내부 메모성 텍스트를 걸러낸다.
+   ① 괄호 안 메모: (사진 잘영 포함 2인) 등
+   ② 숫자+인 단독: 「2인」 등
+   ③ 사진 관련 메모: 「사진 잘영 포함」 등 */
+function cleanMemo(s){
+  if (!s) return s;
+  return s
+    // 괄호( ) 안 내용이 메모성(한글·숫자·공백만)이면 제거
+    .replace(/[（(][^）)]*(?:사진|잘영|포함|인|명)[^）)]*[）)]/g, '')
+    // 「숫자+인」이 앞뒤 공백 또는 문장 경계에 있을 때
+    .replace(/\s*\d+인\s*/g, ' ')
+    // 사진 관련 메모 구문
+    .replace(/\s*사진\s*잘영\s*포함\s*/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 /* ══════════ 펼쳐보기 — 날짜순, 지역 섞어서 ══════════
    🔴 예전에는 샘플 데이터(isLive === false)면 통째로 비워 두었다 —
       가짜 일정이 진짜 기록처럼 보이면 안 된다는 이유였다. 그런데 지도에는
@@ -1413,7 +1432,7 @@ function buildExpand(){
         ph += `<div class="ph${k===p.hero?' hero':''}">${shotImg(p,k,i*7+k,320)}</div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
-            <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${p.j}</div>` : ''}</div>
+            <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${cleanMemo(p.j)}</div>` : ''}</div>
             <span class="rg">${REGIONS[p.g].name}</span></div>
           ${p.ph ? `<div class="exphotos">${ph}</div>` : ''}
         </article>`;
