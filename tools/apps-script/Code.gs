@@ -48,6 +48,36 @@ function doGet(e) {
       return _json({ ok: true });
     }
 
+    // 드라이브 사진 공개 공유 — 이미지가 지도에서 안 보일 때 실행
+    if (action === 'sharePhotos') {
+      var shared = 0, failed = 0;
+      try {
+        var st = getState();
+        var allIds = [];
+        // photos 맵에서 파일 ID 수집
+        if (st && st.photos) {
+          var pmap = st.photos;
+          var pkeys = Object.keys(pmap);
+          for (var pi = 0; pi < pkeys.length; pi++) {
+            var arr = pmap[pkeys[pi]];
+            if (!Array.isArray(arr)) continue;
+            for (var ai = 0; ai < arr.length; ai++) {
+              if (arr[ai] && arr[ai].id) allIds.push(arr[ai].id);
+            }
+          }
+        }
+        for (var fi = 0; fi < allIds.length; fi++) {
+          try {
+            var file = DriveApp.getFileById(allIds[fi]);
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            shared++;
+          } catch(fe) { failed++; }
+          if (fi > 0 && fi % 100 === 0) Utilities.sleep(200); // 속도 제한 방지
+        }
+      } catch(se) { return _json({ ok: false, error: String(se.message || se) }); }
+      return _json({ ok: true, shared: shared, failed: failed });
+    }
+
     // 진단용 — 좌표·시각·파일명을 넣어 분류 결과를 바로 확인한다
     //   …/exec?action=classify&lat=43.0595&lon=141.3510&t=09:40&f=receipt_01.jpg
     if (action === 'classify') {
@@ -170,22 +200,34 @@ var KNOWN_SPOTS = [
   {lat:43.0627, lon:141.3518, k:'tour', n:'시계탑'},
   {lat:43.0609, lon:141.3565, k:'tour', n:'TV타워'},
   {lat:43.0686, lon:141.3508, k:'move', n:'삿포로역'},
+  {lat:43.0637, lon:141.3900, k:'move', n:'삿포로역'},
   {lat:43.0553, lon:141.3536, k:'food', n:'라멘 요코초'},
   {lat:43.0575, lon:141.3563, k:'food', n:'니조시장'},
   {lat:43.0708, lon:141.3690, k:'tour', n:'맥주박물관'},
   {lat:43.0748, lon:141.3420, k:'tour', n:'홋카이도대'},
+  {lat:43.0551, lon:141.3525, k:'food', n:'스스키노'},
+  {lat:43.0660, lon:141.3970, k:'tour', n:'오도리공원'},
   // 오타루 — 실제 좌표는 140.99 대다 (141.00 대는 항구 바깥 바다다)
   {lat:43.1985, lon:140.9944, k:'move', n:'오타루역'},
   {lat:43.1975, lon:140.9995, k:'tour', n:'오타루 운하'},
   {lat:43.1925, lon:140.9958, k:'tour', n:'사카이마치'},
+  // 후라노
+  {lat:43.1697, lon:141.7576, k:'tour', n:'후라노'},
+  {lat:43.1940, lon:141.8040, k:'tour', n:'후라노 근방'},
   // 비에이
   {lat:43.5883, lon:142.4675, k:'move', n:'비에이역'},
+  {lat:43.5920, lon:142.4650, k:'tour', n:'비에이 시내'},
+  {lat:43.5272, lon:142.4652, k:'tour', n:'패치워크 로드'},
   {lat:43.5546, lon:142.4638, k:'tour', n:'사계채의 언덕'},
+  {lat:43.5766, lon:142.4929, k:'tour', n:'크리스마스 트리 나무'},
+  {lat:43.4901, lon:142.4965, k:'tour', n:'사이로 전망대'},
+  {lat:43.4923, lon:142.6140, k:'stay', n:'시로가네 온천'},
+  {lat:43.4731, lon:142.6390, k:'tour', n:'청의 호수 (아오이이케)'},
   {lat:43.5169, lon:142.6236, k:'tour', n:'청의 호수'},
   {lat:43.4185, lon:142.4744, k:'tour', n:'팜 도미타'},
   {lat:43.6197, lon:142.4463, k:'tour', n:'켄과 메리의 나무'}
 ];
-var SPOT_RADIUS_M = 100;
+var SPOT_RADIUS_M = 600;  // 반경을 600m 로 넓혀 들판 등 광역 명소도 매핑
 
 /* 장소 타입 → 핀 종류.
    위에서부터 먼저 맞는 것을 쓴다. 역·숙소처럼 구체적인 타입을 일반 상점보다
