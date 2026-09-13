@@ -3906,7 +3906,7 @@ function buildExpand(){
     list.forEach(({p,i}) => {
       let ph = '';
       for (let k=0;k<p.ph;k++)
-        ph += `<div class="ph${k===p.hero?' hero':''}" data-pi="${i}" data-k="${k}" style="cursor:zoom-in">${shotImg(p,k,i*7+k,320)}</div>`;
+        ph += `<div class="ph${k===p.hero?' hero':''}" data-pi="${i}" data-k="${k}" style="cursor:zoom-in">${shotImg(p,k,i*7+k,320)}<button class="star" aria-pressed="${k===p.hero}" aria-label="대표 사진">★</button></div>`;
       html += `<article class="spot">
           <div class="top"><span class="tm">${p.t}</span>
             <div><h3>${p.n}</h3>${p.j ? `<div class="jp">${cleanMemo(p.j)}</div>` : ''}</div>
@@ -3920,11 +3920,31 @@ function buildExpand(){
     html || `<div class="ex-empty">${charSrc('couple') ? `<img class="empty-couple" src="${charSrc('couple')}" alt="" aria-hidden="true">` : ''}
        <p>아직 사진이 없어요.<br>드라이브 「삿포로여행_사진」 폴더에 사진을 올려주세요.</p></div>`;
 
-  // 펼쳐보기 사진 클릭 → 라이트박스 (한 번만 등록)
+  // 펼쳐보기 사진 클릭 → 라이트박스 / ★ 클릭 → 대표 사진 설정 (한 번만 등록)
   const exbody = document.getElementById('exbody');
   if (!exbody._lbBound) {
     exbody._lbBound = true;
     exbody.addEventListener('click', function(e){
+      // ★ 버튼 클릭 — 대표 사진 설정
+      const star = e.target.closest('.star');
+      if (star){
+        e.stopPropagation();
+        const ph = star.closest('[data-pi]');
+        if (!ph) return;
+        const pi = +ph.dataset.pi, k = +ph.dataset.k;
+        const p = PLACES[pi]; if (!p) return;
+        // 같은 장소의 ★ 전부 해제 후 이 장 선택
+        const article = ph.closest('article');
+        article.querySelectorAll('.star').forEach(s => s.setAttribute('aria-pressed','false'));
+        article.querySelectorAll('.ph').forEach(d => d.classList.remove('hero'));
+        star.setAttribute('aria-pressed','true');
+        ph.classList.add('hero');
+        p.hero = k;
+        saveHero(p);
+        posterRefresh();
+        return;
+      }
+      // 사진 썸네일 클릭 → 라이트박스
       const ph = e.target.closest('[data-pi]');
       if (!ph) return;
       const pi = +ph.dataset.pi, k = +ph.dataset.k;
