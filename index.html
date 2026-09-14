@@ -3711,8 +3711,12 @@ function mergeSpots(R){
 
 function drawPanel(R, side, baseEl, overEl, maxCard){
   const spots = mergeSpots(R);
-  // 카드는 사진 많은 곳 우선 — 자리 이상으로는 세우지 않는다
-  const rank = [...spots].sort((a,b)=>b.ph-a.ph).slice(0, maxCard);
+  // 카드는 사진 많은 곳 우선 — ph(서버 집계)와 shots.length(로컬 로드) 중 큰 값 사용
+  const rank = [...spots].sort((a,b)=>{
+    const pa = Math.max(a.ph||0, (PLACES[a.src]&&PLACES[a.src].shots?PLACES[a.src].shots.length:0));
+    const pb = Math.max(b.ph||0, (PLACES[b.src]&&PLACES[b.src].shots?PLACES[b.src].shots.length:0));
+    return pb - pa;
+  }).slice(0, maxCard);
   const carded = spots.filter(s => rank.includes(s));
 
   // 패널의 실제 가로세로비에 viewBox를 맞춘다 (레터박스 없이)
